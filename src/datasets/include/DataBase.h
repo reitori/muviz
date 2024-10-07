@@ -70,6 +70,10 @@ class EventData {
             curEvent->addHit(arg_row, arg_col, arg_timing);
         }
 
+        size_t size() {
+            return events.size();
+        }
+
         Event* curEvent;
         std::vector<Event> events;
 };
@@ -86,7 +90,7 @@ class DataLoader{
         virtual void run() = 0;
         virtual void join() = 0;
 
-    private:
+    protected:
         ClipBoard<EventData> *output;
         std::unique_ptr<std::thread> thread_ptr;
 };
