@@ -4,11 +4,38 @@
 // void YarrBinary::configure(const json &arg_config) override;
 
 void YarrBinary::run() {
-
+    run_thread = true;
+    thread_ptr.reset(new std::thread(&YarrBinary::process, this));
 }
 
 void YarrBinary::join() {
+    run_thread = false;
+    thread_ptr->join();
+}
 
+void YarrBinary::init() {
+    this_tag = 0;
+    this_l1id = 0;
+    this_bcid = 0;
+    max_events_per_block = (unsigned)(-1);
+    run_thread = false;
+}
+
+void YarrBinary::configure(const json &arg_config) {
+    
+}
+
+void YarrBinary::process() {
+    int i = 0;
+    while(run_thread) {
+        // Make new block of events
+        curEvents = std::make_unique<EventData>();
+        while(run_thread && (curEvents->size() < max_events_per_block)) {
+            std::cout << "sleep " << i++ << std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        }
+        output->pushData(std::move(curEvents));
+    }
 }
 
 void YarrBinary::fromFile(std::fstream &handle) {
