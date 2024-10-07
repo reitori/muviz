@@ -26,7 +26,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# include(ExternalProject)
+
+
+
 
 # ExternalProject_Add (
 #       YARR
@@ -56,7 +58,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 #             -DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}
 #             -DCMAKE_CXX_STANDARD_REQUIRED=${CMAKE_CXX_STANDARD_REQUIRED}
 #       )
-
+include(cmake/CMakeLists.txt.external)
 add_subdirectory(src)
 
 

@@ -3,7 +3,6 @@
 
 #include "DataBase.h"
 #include <fstream>
-#include <iostream>
 #include <thread>
 
 class YarrBinary : public DataLoader {

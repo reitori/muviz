@@ -3,9 +3,10 @@
 #include <vector>
 #include <iostream>
 #include <getopt.h>
+#include "logging.h"
 
 struct ScanOpts {
-    std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
+    // std::string loggingPattern = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
     std::string configPath;
     std::string commandLineStr;
     std::string progName;
@@ -28,11 +29,21 @@ struct ScanOpts {
     // bool makeGraph = false;
 };
 
+void setupLoggers() {
+    json loggerConfig;
+    loggerConfig["pattern"] = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
+    loggerConfig["log_config"][0]["name"] = "all";
+    loggerConfig["log_config"][0]["level"] = "info";
+    loggerConfig["outputDir"] = "";
+
+    logging::setupLoggers(loggerConfig);
+}
+
 void printHelp() {
 
-    std::cout << "Help:" << std::endl;
-    std::cout << " -h: Shows this." << std::endl;
-    std::cout << " -c <config.json> Provide data reader configuration." << std::endl;
+    spdlog::info("Help:");
+    spdlog::info(" -h: Shows this.");
+    spdlog::info(" -c <config.json> Provide data reader configuration.");
     // std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
     // std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
     // std::cout << " -W: Enable using Local DB." << std::endl;
@@ -71,16 +82,13 @@ int parseOptions(int argc, char *argv[], ScanOpts &scanOpts) {
                 scanOpts.configPath = std::string(optarg);
                 break;
             default:
-                // spdlog::critical("Error while parsing command line parameters!");
-                std::cout << "Rerun with --help for more information\n";
+                spdlog::critical("Error while parsing command line parameters!");
                 return -1;
         }
     }
 
     if(scanOpts.configPath.empty()) {
-        // spdlog::critical("Controller config required (-r)");
-        std::cout << "Configuration file required (-c)" << std::endl;
-        std::cout << "Rerun with --help for more information\n";
+        spdlog::critical("Configuration file required (-c)");
         return -1;
     }
 
