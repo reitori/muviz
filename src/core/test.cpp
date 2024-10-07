@@ -3,16 +3,26 @@
 #include <iostream>
 #include "cli.h"
 
+namespace
+{
+    auto logger = logging::make_log("VisualizerCLI");
+}
+
+
 int main(int argc, char** argv) {
-    std::cout << "test main start" << std::endl;
 
     // option parsing
     ScanOpts options;
     int ret = parseOptions(argc, argv, options);
+    
+    setupLoggers();
+
     if (ret != 1) {
         printHelp();
         return ret;
     }
+
+    logging::banner(logger, "Visualizer CLI Program");
 
     YarrBinary yb;
     json j;
@@ -26,8 +36,8 @@ int main(int argc, char** argv) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     yb.join();
 
-    std::cout << "Data size: " << cb->getNumDataIn() << ", " << cb->size() << std::endl;
-    std::cout << "test main end" << std::endl;
+    logger->info("Data size: {} / {}", cb->getNumDataIn(), cb->size());
+    logger->info("test main end");
 
     return 0;
 }

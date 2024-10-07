@@ -1,5 +1,10 @@
 #include "YarrBinary.h"
+#include "logging.h"
 
+namespace
+{
+    auto logger = logging::make_log("YarrBinaryReader");
+}
 // void YarrBinary::init() override;
 // void YarrBinary::configure(const json &arg_config) override;
 
@@ -31,7 +36,7 @@ void YarrBinary::process() {
         // Make new block of events
         curEvents = std::make_unique<EventData>();
         while(run_thread && (curEvents->size() < max_events_per_block)) {
-            std::cout << "sleep " << i++ << std::endl;
+            logger->info("sleep step {}", i++);
             std::this_thread::sleep_for(std::chrono::milliseconds(250));
         }
         output->pushData(std::move(curEvents));

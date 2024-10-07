@@ -1,7 +1,11 @@
+ADD_EXTERNAL_DEPS()
+
 add_library(VisualizerLib SHARED
     datasets/YarrBinary.cpp
     util/include/json.hpp
     util/include/util.hpp
+    util/include/logging.h
+    util/logging.cpp
 )
 
 target_include_directories(VisualizerLib PUBLIC datasets/include)

@@ -1,0 +1,16 @@
+include(ExternalProject)
+include(FetchContent)
+
+# include(ExternalProject)
+function(ADD_EXTERNAL_DEPS )
+    # spdlog
+    FetchContent_Declare(
+        spdlog
+        GIT_REPOSITORY  https://gitlab.cern.ch/atlas-sw-misc/spdlog.git
+        GIT_TAG v1.9.2.x
+        SOURCE_SUBDIR  spdlog
+    )
+    FetchContent_MakeAvailable(spdlog)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR}/../_deps/spdlog-src/include)
+
+endfunction()
