@@ -2,6 +2,8 @@
 #include "YarrBinary.h"
 #include <iostream>
 #include "cli.h"
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
 namespace
 {
@@ -33,11 +35,19 @@ int main(int argc, char** argv) {
     yb.connect(cb.get());
     yb.configure(j);
     yb.run();
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    // std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     yb.join();
 
     logger->info("Data size: {} / {}", cb->getNumDataIn(), cb->size());
     logger->info("test main end");
+
+    glfwInit();
+    GLFWwindow* window = glfwCreateWindow(640, 480, "My Title", NULL, NULL);
+    if (window)
+        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+    else 
+        logger->error("Window did not work");
+    glfwDestroyWindow(window);
 
     return 0;
 }
