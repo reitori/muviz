@@ -25,7 +25,7 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
+add_subdirectory(glad/)
 
 
 
@@ -58,8 +58,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 #             -DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}
 #             -DCMAKE_CXX_STANDARD_REQUIRED=${CMAKE_CXX_STANDARD_REQUIRED}
 #       )
+
 include(cmake/CMakeLists.txt.external)
 add_subdirectory(src)
-
-
+cmake_policy (SET CMP0072 OLD)
+find_package(OpenGL REQUIRED)
+include_directories(${OPENGL_INCLUDE_DIR})
+# find_package(glfw REQUIRED)
 # target_include_directories(VisualizerLib PUBLIC include)
