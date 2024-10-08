@@ -18,4 +18,12 @@ add_executable(test
     datasets/YarrBinary.cpp
 )
 target_link_libraries(test VisualizerLib pthread rt glfw glad)
-set_target_properties(test PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(test 
+    PROPERTIES 
+    LINKER_LANGUAGE CXX
+    # ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    # LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    RUNTIME_OUTPUT_DIRECTORY "${TARGET_INSTALL_AREA}/bin"
+)
+
+# message("Saving bin files to ${TARGET_INSTALL_AREA}")

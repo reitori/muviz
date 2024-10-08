@@ -6,8 +6,8 @@ function(ADD_EXTERNAL_DEPS )
     # openGL
     FetchContent_Declare(
         glfw
-        GIT_REPOSITORY  https://github.com/glfw/glfw.git
-        GIT_TAG 3.4
+        GIT_REPOSITORY  https://github.com/luclepot/glfw/
+        GIT_TAG redhat-compile-changes
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE
     )
