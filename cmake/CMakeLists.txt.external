@@ -3,6 +3,17 @@ include(FetchContent)
 
 # include(ExternalProject)
 function(ADD_EXTERNAL_DEPS )
+    # openGL
+    FetchContent_Declare(
+        glfw
+        GIT_REPOSITORY  https://github.com/luclepot/glfw/
+        GIT_TAG redhat-compile-changes
+        GIT_SHALLOW TRUE
+        GIT_PROGRESS TRUE
+    )
+    FetchContent_MakeAvailable(glfw)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR}/../_deps/glfw-src/include)
+
     # spdlog
     FetchContent_Declare(
         spdlog
@@ -12,5 +23,6 @@ function(ADD_EXTERNAL_DEPS )
     )
     FetchContent_MakeAvailable(spdlog)
     include_directories(${CMAKE_CURRENT_BINARY_DIR}/../_deps/spdlog-src/include)
+
 
 endfunction()
