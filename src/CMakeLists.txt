@@ -17,7 +17,7 @@ add_executable(test
     core/test.cpp
     datasets/YarrBinary.cpp
 )
-target_link_libraries(test VisualizerLib pthread rt glfw glad)
+target_link_libraries(test VisualizerLib pthread rt glfw glad imgui)
 set_target_properties(test 
     PROPERTIES 
     LINKER_LANGUAGE CXX
