@@ -2,6 +2,11 @@
 #include "YarrBinary.h"
 #include <iostream>
 #include "cli.h"
+
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -13,6 +18,7 @@ namespace
 void initGLFW();
 GLFWwindow* createOpenGLContext(int width, int height);
 void frame(GLFWwindow* window);
+static void GLFWErrorCallback(int err, const char* message);
 
 int main(int argc, char** argv) {
 
@@ -46,11 +52,12 @@ int main(int argc, char** argv) {
 
     initGLFW();
     GLFWwindow* window = createOpenGLContext(800, 800);
-    if(!glfwWindowShouldClose(window)){
+    while(!glfwWindowShouldClose(window)){
         frame(window);
-        std::cout << "this is a frame\n";
+        logger->debug("This is a frame");
     }
     glfwTerminate();
+    logger->info("Terminated window");
 
     return 0;
 }
@@ -60,7 +67,7 @@ void initGLFW(){
         logger->error("GLFW initialization failed");
         return;
     }
-    std::cout << "GLFW Initialized" << std::endl;
+    logger->info("GLFW Initialized");
 }
 
 GLFWwindow* createOpenGLContext(int width, int height){
@@ -82,6 +89,14 @@ GLFWwindow* createOpenGLContext(int width, int height){
 }
 
 void frame(GLFWwindow* window){
+    float t = glfwGetTime();
+    glClearColor(sin(t), cos(t), 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
     glfwSwapBuffers(window);
     glfwPollEvents();
+}
+
+static void GLFWErrorCallback(int err, const char* message){
+    logger->error("GLFW Code {0}: {1}", err, message);
 }
