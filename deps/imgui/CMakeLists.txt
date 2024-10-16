@@ -3,7 +3,7 @@ project(ImGUI)
 
 add_library(imgui 
     include/imgui.h 
-    src/imgui.cpp 
+    src/imgui.cpp
     include/imconfig.h
     src/imgui_draw.cpp
     include/imgui_internal.h
@@ -14,6 +14,7 @@ add_library(imgui
     include/imstb_truetype.h
     src/imgui_impl_glfw.cpp
     src/imgui_impl_opengl3.cpp
+    src/imgui_demo.cpp
     include/imgui_impl_glfw.h
     include/imgui_impl_opengl3.h
     include/imgui_impl_opengl3_loader.h
