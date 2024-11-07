@@ -1,24 +1,30 @@
-#include "YarrBinary.h"
+#include "YarrBinaryFile.h"
+#include "AllDataLoaders.h"
 #include "logging.h"
+
 
 namespace
 {
-    auto logger = logging::make_log("YarrBinaryReader");
-}
-// void YarrBinary::init() override;
-// void YarrBinary::configure(const json &arg_config) override;
+    auto logger = logging::make_log("YarrBinaryFile");
+    bool YarrBinaryFileRegistered =
+      StdDict::registerDataLoader("YarrBinaryFile",
+                                []() { return std::unique_ptr<DataLoader>(new YarrBinaryFile());});
 
-void YarrBinary::run() {
+}
+// void YarrBinaryFile::init() override;
+// void YarrBinaryFile::configure(const json &arg_config) override;
+
+void YarrBinaryFile::run() {
     run_thread = true;
-    thread_ptr.reset(new std::thread(&YarrBinary::process, this));
+    thread_ptr.reset(new std::thread(&YarrBinaryFile::process, this));
 }
 
-void YarrBinary::join() {
+void YarrBinaryFile::join() {
     run_thread = false;
     thread_ptr->join();
 }
 
-void YarrBinary::init() {
+void YarrBinaryFile::init() {
     this_tag = 0;
     this_l1id = 0;
     this_bcid = 0;
@@ -26,11 +32,11 @@ void YarrBinary::init() {
     run_thread = false;
 }
 
-void YarrBinary::configure(const json &arg_config) {
+void YarrBinaryFile::configure(const json &arg_config) {
     
 }
 
-void YarrBinary::process() {
+void YarrBinaryFile::process() {
     int i = 0;
     while(run_thread) {
         // Make new block of events
@@ -43,7 +49,7 @@ void YarrBinary::process() {
     }
 }
 
-void YarrBinary::fromFile(std::fstream &handle) {
+void YarrBinaryFile::fromFile(std::fstream &handle) {
     uint16_t t_hits = 0;
     handle.read((char*)&this_tag, sizeof(uint32_t));
     handle.read((char*)&this_l1id, sizeof(uint16_t));
@@ -65,7 +71,7 @@ void YarrBinary::fromFile(std::fstream &handle) {
 // #include <iostream>
 // #include <fstream>
 
-// void YarrBinary::toFile(std::fstream &handle) const {
+// void YarrBinaryFile::toFile(std::fstream &handle) const {
 //     handle.write((char*)&tag, sizeof(uint32_t));
 //     handle.write((char*)&l1id, sizeof(uint16_t));
 //     handle.write((char*)&bcid, sizeof(uint16_t));
@@ -75,7 +81,7 @@ void YarrBinary::fromFile(std::fstream &handle) {
 //     } // h
 // }
 
-// void YarrBinary::fromFile(std::fstream &handle) {
+// void YarrBinaryFile::fromFile(std::fstream &handle) {
 //     uint16_t t_hits = 0;
 //     handle.read((char*)&tag, sizeof(uint32_t));
 //     handle.read((char*)&l1id, sizeof(uint16_t));

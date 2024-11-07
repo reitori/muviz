@@ -1,11 +1,11 @@
-#ifndef YARR_BINARY_H
-#define YARR_BINARY_H
+#ifndef YARR_BINARY_FILE_H
+#define YARR_BINARY_FILE_H
 
 #include "DataBase.h"
 #include <fstream>
 #include <thread>
 
-class YarrBinary : public DataLoader {
+class YarrBinaryFile : public DataLoader {
 public:
     void init() override;
     void configure(const json &arg_config) override;

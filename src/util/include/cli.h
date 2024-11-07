@@ -10,23 +10,6 @@ struct ScanOpts {
     std::string configPath;
     std::string commandLineStr;
     std::string progName;
-    // std::string outputDir = "./data/";
-    // std::string ctrlCfgPath;
-    // bool doPlots = false;
-    // int target_charge{-1};
-    // int target_tot{-1};
-    // int mask_opt{-1};
-    // bool dbUse = false;
-    // bool doOutput = true;
-    // std::string logCfgPath;
-    // std::string dbCfgPath ;
-    // std::string dbSiteCfgPath;
-    // std::string dbUserCfgPath;
-    // std::string dbTag;
-    // bool setQCMode = false;
-    // bool setInteractiveMode = false;
-    // bool doResetBeforeScan = true;
-    // bool makeGraph = false;
 };
 
 void setupLoggers() {

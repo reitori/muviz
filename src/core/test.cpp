@@ -1,5 +1,5 @@
 #include "DataBase.h"
-#include "YarrBinary.h"
+#include "YarrBinaryFile.h"
 #include <iostream>
 #include "cli.h"
 
@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
 
     logging::banner(logger, "Visualizer CLI Program");
 
-    YarrBinary yb;
+    YarrBinaryFile yb;
     json j;
 
     std::unique_ptr<ClipBoard<EventData>> cb = std::make_unique<ClipBoard<EventData>>();
