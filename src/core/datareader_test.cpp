@@ -65,6 +65,9 @@ int main(int argc, char** argv) {
         dataLoaders[i]->run();
     }
 
+    // main program here
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
     for(int i = 0; i < dataLoaders.size(); i++) {
         dataLoaders[i]->join();
 
