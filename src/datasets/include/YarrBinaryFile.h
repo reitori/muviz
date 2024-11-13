@@ -23,22 +23,15 @@ private:
     // implementation
     void process();
     void processBatch();
-    void fromFile();
-    bool fromTruncatedFile();
+    bool fromFile();
 
     void readHeader();
     void readHits();
-
-    enum read_mode {
-        fast,           // Fast read mode: do not check for end of file or anything else
-        truncated       // 
-    };
     
     uint32_t this_tag;
     uint16_t this_l1id, this_bcid, this_t_hits;
 
 
-    read_mode file_rm;
     unsigned max_events_per_block, block_timeout; // configurable parameters
     
     unsigned total_events, batch_n, total_hits; // counters for reporting

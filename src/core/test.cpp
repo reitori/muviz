@@ -35,13 +35,13 @@ float color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 int main(int argc, char** argv) {
 
     // option parsing
-    ScanOpts options;
-    int ret = parseOptions(argc, argv, options);
+    viz_cli::ScanOpts options;
+    int ret = viz_cli::parseOptions(argc, argv, options);
     
-    setupLoggers(false);
+    viz_cli::setupLoggers(false);
 
     if (ret != 1) {
-        printHelp();
+        viz_cli::printHelp();
         return ret;
     }
 

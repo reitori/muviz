@@ -69,20 +69,21 @@ void YarrBinaryFile::configure(const json &config) {
     else
         max_events_per_block = -1; 
 
-    // filereader mode
-    if(config.contains("read_mode")) {
-        std::string mode_str = config["read_mode"];
-        if(mode_str == "fast")
-            file_rm = read_mode::fast;
-        else if(mode_str == "truncated")
-            file_rm = read_mode::truncated;
-        else {
-            logger->error("Unrecognized read mode {}! Options are: [fast, truncated]", mode_str);
-            throw(std::invalid_argument("Unrecognized read mode"));
-        }
-    }
-    else
-        file_rm = read_mode::fast;
+    
+    // filereader mode (DISABLED)
+    // if(config.contains("read_mode")) {
+    //     std::string mode_str = config["read_mode"];
+    //     if(mode_str == "fast")
+    //         file_rm = read_mode::fast;
+    //     else if(mode_str == "truncated")
+    //         file_rm = read_mode::truncated;
+    //     else {
+    //         logger->error("Unrecognized read mode {}! Options are: [fast, truncated]", mode_str);
+    //         throw(std::invalid_argument("Unrecognized read mode"));
+    //     }
+    // }
+    // else
+    //     file_rm = read_mode::fast;
 
         
 
@@ -109,16 +110,7 @@ void YarrBinaryFile::processBatch() {
     bool read_success = true;
     while(fileHandle && run_thread && (curEvents != nullptr) && read_success) { // basic case of "block lives"
         // logger->debug("[{}]: batch variables: fh {} rt {} np {} rs {}", name, (bool)fileHandle, (bool)run_thread, (bool)(curEvents != nullptr), (bool)read_success);
-        switch(file_rm) {
-            case read_mode::fast:
-                fromFile();
-                break;
-            case read_mode::truncated:
-                read_success = fromTruncatedFile();
-                break;
-            default:
-                continue;
-        }
+        read_success = fromFile();
         // logger->debug("[{}]: batch after variables: rm {} fh {} rt {} np {} rs {}", name, file_rm, (bool)fileHandle, (bool)run_thread, (bool)(curEvents != nullptr), (bool)read_success);
     }
 }
@@ -166,16 +158,7 @@ void YarrBinaryFile::readHits() {
     } // ii
 }
 
-void YarrBinaryFile::fromFile() {
-    readHeader();
-    curEvents->newEvent(this_tag, this_l1id, this_bcid);
-    readHits();
-    filePos = fileHandle.tellg();
-    // logger->debug("[{}]: event {}, pos {}: {} | {} | {} | {}", name, total_events, filePos, this_tag, this_l1id, this_bcid, this_t_hits);
-    total_events++;
-}
-
-bool YarrBinaryFile::fromTruncatedFile() {
+bool YarrBinaryFile::fromFile() {
     readHeader();
 
     if(!fileHandle) {

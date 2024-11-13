@@ -9,6 +9,7 @@ add_library(VisualizerLib SHARED
     util/include/util.hpp
     util/include/logging.h
     util/logging.cpp
+    util/cli.cpp
 )
 
 target_include_directories(VisualizerLib PUBLIC datasets/include)

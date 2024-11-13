@@ -11,43 +11,24 @@ namespace
     auto logger = logging::make_log("VisualizerCLI");
 }
 
-json openJsonFile(const std::string& filepath) {
-    std::ifstream file(filepath);
-    if (!file) {
-        throw std::runtime_error("could not open file");
-    }
-    json j;
-    try {
-        j = json::parse(file);
-    } catch (json::parse_error &e) {
-        throw std::runtime_error(e.what());
-        throw std::runtime_error(e.what());
-    }
-    file.close();
-    // variant produces null for some parse errors
-    if(j.is_null()) {
-        throw std::runtime_error("Parsing json file produced null");
-    }
-    return j;
-}
 
 sig_atomic_t signaled = 0;
 int main(int argc, char** argv) {
 
     // option parsing
-    ScanOpts options;
-    int ret = parseOptions(argc, argv, options);
+    viz_cli::ScanOpts options;
+    int ret = viz_cli::parseOptions(argc, argv, options);
     
-    setupLoggers(options.verbose);
+    viz_cli::setupLoggers(options.verbose);
 
     if (ret != 1) {
-        printHelp();
+        viz_cli::printHelp();
         return ret;
     }
 
     logging::banner(logger, "Visualizer CLI Program");
 
-    json config = openJsonFile(options.configPath);
+    json config = viz_cli::openJsonFile(options.configPath);
     
     std::vector<std::unique_ptr<DataLoader>> dataLoaders;
     std::vector<std::unique_ptr<ClipBoard<EventData>>> clipboards;
@@ -88,8 +69,8 @@ int main(int argc, char** argv) {
     while(signaled == 0) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-    std::cout << "\r";
     
+    std::cout << "\r";
     logger->info("Caught interrupt, stopping threads");
     
     for(int i = 0; i < dataLoaders.size(); i++) {
