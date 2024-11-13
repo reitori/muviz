@@ -47,7 +47,7 @@ class Event {
 
         uint16_t l1id;
         uint16_t bcid;
-        uint16_t tag;
+        uint32_t tag;
         uint16_t nHits;
         std::vector<Hit> hits;
 };
@@ -82,7 +82,7 @@ class DataLoader{
     public:
         DataLoader() = default;
         ~DataLoader() = default;
-        virtual void init() {};
+        virtual void init() = 0;
         virtual void configure(const json &arg_config) {}; // defined by default
         virtual void connect(ClipBoard<EventData> *arg_output)  {
             output = arg_output;

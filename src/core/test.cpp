@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
     ScanOpts options;
     int ret = parseOptions(argc, argv, options);
     
-    setupLoggers();
+    setupLoggers(false);
 
     if (ret != 1) {
         printHelp();

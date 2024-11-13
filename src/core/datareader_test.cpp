@@ -1,8 +1,10 @@
-#include "DataBase.h"
-#include "YarrBinaryFile.h"
 #include <iostream>
+#include <string>
+
 #include "cli.h"
 #include "AllDataLoaders.h"
+#include "DataBase.h"
+#include "YarrBinaryFile.h"
 
 namespace
 {
@@ -35,7 +37,7 @@ int main(int argc, char** argv) {
     ScanOpts options;
     int ret = parseOptions(argc, argv, options);
     
-    setupLoggers();
+    setupLoggers(options.verbose);
 
     if (ret != 1) {
         printHelp();
@@ -49,14 +51,28 @@ int main(int argc, char** argv) {
     std::vector<std::unique_ptr<DataLoader>> dataLoaders;
     std::vector<std::unique_ptr<ClipBoard<EventData>>> clipboards;
 
-    for(int i = 0; i < config["sources"].size(); i++) {
+    for(int i = 0, k=0; i < config["sources"].size(); i++) {
         auto source = config["sources"][i];
-        if(config.contains("path"))
-            source["path"] = config["path"];
+        if(!source.contains("name")) {
+            source["name"] = "anon_" + std::to_string(i);
+        }
+        if(config.contains("global_source_config")) {
+            source.merge_patch(config["global_source_config"]);
+        }
+        
+        int enable = 1;
+        if(source.contains("enable")) {
+            enable = (int)source["enable"];
+        }
 
-        dataLoaders.push_back(StdDict::getDataLoader(source["type"]));
-        dataLoaders[i]->configure(source);
-        clipboards.push_back(std::make_unique<ClipBoard<EventData>>());
+        if(enable) {
+            dataLoaders.push_back(StdDict::getDataLoader(source["type"]));
+            dataLoaders[k++]->configure(source);
+            clipboards.push_back(std::make_unique<ClipBoard<EventData>>());
+        }
+        else {
+            logger->info("Skipping disabled FE with ID {}, name {}", i, source["name"]);
+        }
     }
 
     for(int i = 0; i < dataLoaders.size(); i++) {
@@ -66,11 +82,10 @@ int main(int argc, char** argv) {
     }
 
     // main program here
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
     for(int i = 0; i < dataLoaders.size(); i++) {
         dataLoaders[i]->join();
-
         logger->info("FE with ID {}: size {} / {}", i, clipboards[i]->getNumDataIn(), clipboards[i]->size());
     }
 

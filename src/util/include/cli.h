@@ -10,13 +10,14 @@ struct ScanOpts {
     std::string configPath;
     std::string commandLineStr;
     std::string progName;
+    bool verbose;
 };
 
-void setupLoggers() {
+void setupLoggers(bool verbose) {
     json loggerConfig;
     loggerConfig["pattern"] = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
     loggerConfig["log_config"][0]["name"] = "all";
-    loggerConfig["log_config"][0]["level"] = "info";
+    loggerConfig["log_config"][0]["level"] = verbose ? "debug" : "info";
     loggerConfig["outputDir"] = "";
 
     logging::setupLoggers(loggerConfig);
@@ -27,6 +28,7 @@ void printHelp() {
     spdlog::info("Help:");
     spdlog::info(" -h: Shows this.");
     spdlog::info(" -c <config.json> Provide data reader configuration.");
+    spdlog::info(" -v Toggles on debug output (default false).");
     // std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
     // std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
     // std::cout << " -W: Enable using Local DB." << std::endl;
@@ -52,9 +54,10 @@ int parseOptions(int argc, char *argv[], ScanOpts &scanOpts) {
         // {"version", no_argument, 0, 'v'},
         {0, 0, 0, 0}};
     int c;
+    scanOpts.verbose = false;
     while (true) {
         int opt_index=0;
-        c = getopt_long(argc, argv, "hc:", long_options, &opt_index);
+        c = getopt_long(argc, argv, "hc:v", long_options, &opt_index);
         int count = 0;
         if(c == -1) break;
         switch (c) {
@@ -63,6 +66,9 @@ int parseOptions(int argc, char *argv[], ScanOpts &scanOpts) {
                 return 0;
             case 'c':
                 scanOpts.configPath = std::string(optarg);
+                break;
+            case 'v':
+                scanOpts.verbose = true;
                 break;
             default:
                 spdlog::critical("Error while parsing command line parameters!");
