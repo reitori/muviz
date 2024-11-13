@@ -3,7 +3,6 @@
         "path": "data/truncated",
         "auto": true,
         "type": "YarrBinaryFile",
-        "read_mode": "truncated",
         "fps": 100,
         "block_timeout": 100000
     },
