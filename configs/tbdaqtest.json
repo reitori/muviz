@@ -1,0 +1,31 @@
+{
+    "global_source_config": {
+        "path": "/home/testbeam/software/Yarr-devel/data/002142_selftrigger_source",
+        "auto": true,
+        "type": "YarrBinaryFile",
+        "mode": "live",
+        "fps": 100
+    },
+    "sources": [
+        {
+            "name": "KEKv1.1Q6_Chip1",
+            "position": [0, 0, 0],
+            "angle": [0, 0, 0]
+        },
+        {
+            "name": "KEKv1.1Q6_Chip2",
+            "position": [0, 0, 1],
+            "angle": [0, 0, 0]
+        },
+        {
+            "name": "KEKv1.1Q6_Chip3",
+            "position": [0, 0, 2],
+            "angle": [0, 0, 0]
+        },
+        {
+            "name": "KEKv1.1Q6_Chip4",
+            "position": [0, 0, 3],
+            "angle": [0, 0, 0]
+        }
+    ]
+}
