@@ -1,11 +1,11 @@
 #include <iostream>
 #include <string>
+#include <csignal>
 
 #include "cli.h"
 #include "AllDataLoaders.h"
 #include "DataBase.h"
 #include "YarrBinaryFile.h"
-
 namespace
 {
     auto logger = logging::make_log("VisualizerCLI");
@@ -31,6 +31,7 @@ json openJsonFile(const std::string& filepath) {
     return j;
 }
 
+sig_atomic_t signaled = 0;
 int main(int argc, char** argv) {
 
     // option parsing
@@ -81,9 +82,14 @@ int main(int argc, char** argv) {
         dataLoaders[i]->run();
     }
 
-    // main program here
-    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+    signal(SIGINT, [](int signum){signaled = 1;});
+    signal(SIGUSR1, [](int signum){signaled = 1;});
 
+    while(signaled == 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    logger->info("Caught interrupt, stopping threads");
+    
     for(int i = 0; i < dataLoaders.size(); i++) {
         dataLoaders[i]->join();
         logger->info("FE with ID {}: size {} / {}", i, clipboards[i]->getNumDataIn(), clipboards[i]->size());

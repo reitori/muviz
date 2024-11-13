@@ -47,7 +47,6 @@ void YarrBinaryFile::init() {
     hit_read = true;
 }
 
-
 void YarrBinaryFile::configure(const json &config) {
     // name
     if(config.contains("name")) {
@@ -104,10 +103,11 @@ void YarrBinaryFile::configure(const json &config) {
         throw(std::invalid_argument("Path " + filename + " could not be opened!"));
 }
 
+sig_atomic_t signaled = 0;
 void YarrBinaryFile::processBatch() {
     int sleep_step = 0;
     bool read_success = true;
-    while(fileHandle && run_thread && (curEvents != nullptr) && read_success) { // basic case of "block lives"
+    while(fileHandle && run_thread && (curEvents != nullptr) && read_success && signaled == 0) { // basic case of "block lives"
         // logger->debug("[{}]: batch variables: fh {} rt {} np {} rs {}", name, (bool)fileHandle, (bool)run_thread, (bool)(curEvents != nullptr), (bool)read_success);
         switch(file_rm) {
             case read_mode::fast:
@@ -124,17 +124,28 @@ void YarrBinaryFile::processBatch() {
 }
 
 void YarrBinaryFile::process() {
+    signaled = 0;
+    signal(SIGINT, [](int signum){signaled = 1;});
+    signal(SIGUSR1, [](int signum){signaled = 1;});
+
     batch_n = 0;
-    
-    while(run_thread) {
+    std::chrono::steady_clock::time_point last = std::chrono::steady_clock::now(), now;
+    while(run_thread && signaled == 0) {
         // Make new block of events
         if(!curEvents)
             curEvents = std::make_unique<EventData>();
         processBatch();
+        now = std::chrono::steady_clock::now();
         if(curEvents->size() > 0) {
+            auto diff = ((float)std::chrono::duration_cast<std::chrono::microseconds>(now - last).count())/1000000;
+            logger->debug(
+                "[{}] Batch {}: {} events in {} seconds = {} ev/s", 
+                name, batch_n, curEvents->size(), diff, curEvents->size()/diff
+            );
             output->pushData(std::move(curEvents));
             batch_n++;
         }
+        last = now;
         std::this_thread::sleep_for(std::chrono::microseconds(block_timeout));
     }
 }
@@ -160,7 +171,7 @@ void YarrBinaryFile::fromFile() {
     curEvents->newEvent(this_tag, this_l1id, this_bcid);
     readHits();
     filePos = fileHandle.tellg();
-    logger->debug("[{}]: event {}, pos {}: {} | {} | {} | {}", name, total_events, filePos, this_tag, this_l1id, this_bcid, this_t_hits);
+    // logger->debug("[{}]: event {}, pos {}: {} | {} | {} | {}", name, total_events, filePos, this_tag, this_l1id, this_bcid, this_t_hits);
     total_events++;
 }
 
@@ -198,33 +209,3 @@ bool YarrBinaryFile::fromTruncatedFile() {
     total_events++;
     return true;
 }
-
-
-// #include "EventData.h"
-
-// // std/stl
-// #include <iostream>
-// #include <fstream>
-
-// void YarrBinaryFile::toFile(std::fstream &handle) const {
-//     handle.write((char*)&tag, sizeof(uint32_t));
-//     handle.write((char*)&l1id, sizeof(uint16_t));
-//     handle.write((char*)&bcid, sizeof(uint16_t));
-//     handle.write((char*)&nHits, sizeof(uint16_t));
-//     for (auto hit : hits) {
-//         handle.write((char*)&hit, sizeof(FrontEndHit));
-//     } // h
-// }
-
-// void YarrBinaryFile::fromFile(std::fstream &handle) {
-//     uint16_t t_hits = 0;
-//     handle.read((char*)&tag, sizeof(uint32_t));
-//     handle.read((char*)&l1id, sizeof(uint16_t));
-//     handle.read((char*)&bcid, sizeof(uint16_t));
-//     handle.read((char*)&t_hits, sizeof(uint16_t));
-//     for (unsigned ii = 0; ii < t_hits; ii++) {
-//         FrontEndHit hit;
-//         handle.read((char*)&hit, sizeof(FrontEndHit));
-//         this->addHit(hit);
-//     } // ii
-// }

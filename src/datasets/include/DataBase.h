@@ -7,6 +7,7 @@
 #include <memory>
 #include <thread>
 #include <vector>
+#include <csignal>
 
 struct Hit {
     uint16_t col : 16;

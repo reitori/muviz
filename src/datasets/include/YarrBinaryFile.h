@@ -30,7 +30,8 @@ private:
     void readHits();
 
     enum read_mode {
-        fast, truncated
+        fast,           // Fast read mode: do not check for end of file or anything else
+        truncated       // 
     };
     
     uint32_t this_tag;
