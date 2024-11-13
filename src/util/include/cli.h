@@ -3,8 +3,8 @@
 #define _CLI_H_
 
 // #################################################
-// # Author: Luc Le Pottier                        #
-// # Email: luclepot@lbl.gov                       #
+// # Author: Luc Le Pottier, Koji Abel             #
+// # Email: luclepot / kabel at lbl.gov            #
 // # Project: YARR-event-visualizer                #
 // # Description: CLI for data reading interfaces  #
 // #################################################
@@ -13,6 +13,7 @@
 #include <iostream>
 #include <getopt.h>
 #include <fstream>
+#include <map>
 
 #include "logging.h"
 #include "AllDataLoaders.h"
@@ -39,10 +40,17 @@ class VisualizerCli {
         VisualizerCli();
         ~VisualizerCli() = default;
 
+        // Runtime usage
         int init(int argc, char** argv);
         int configure();
         int start();
         int stop();
+
+        // Config passing
+        const json& getConfig() {return config;}
+        std::unique_ptr<EventData> getData(int fe_id);
+        std::unique_ptr<EventData> getData(std::string fe_id);
+        size_t getSize() {return dataLoaders.size();}
 
     private:
         int parseOptions(int argc, char *argv[]);
@@ -52,7 +60,9 @@ class VisualizerCli {
         
         json config;
         std::vector<std::unique_ptr<DataLoader>> dataLoaders;
-        std::vector<std::unique_ptr<ClipBoard<EventData>>> clipboards;
+        std::vector<std::shared_ptr<ClipBoard<EventData>>> clipboards;
+        std::map<std::string, int> feIdMap;
+        std::vector<std::string> names;
 };
 
 #endif

@@ -60,7 +60,7 @@ void YarrBinaryFile::configure(const json &config) {
     // block timeout
     if(config.contains("block_timeout"))
         block_timeout = (unsigned)config["block_timeout"];
-    else
+        else
         block_timeout = 100; // microseconds
     
     // max_events_per_block
@@ -68,24 +68,6 @@ void YarrBinaryFile::configure(const json &config) {
         max_events_per_block = (unsigned)config["max_events_per_block"];
     else
         max_events_per_block = -1; 
-
-    
-    // filereader mode (DISABLED)
-    // if(config.contains("read_mode")) {
-    //     std::string mode_str = config["read_mode"];
-    //     if(mode_str == "fast")
-    //         file_rm = read_mode::fast;
-    //     else if(mode_str == "truncated")
-    //         file_rm = read_mode::truncated;
-    //     else {
-    //         logger->error("Unrecognized read mode {}! Options are: [fast, truncated]", mode_str);
-    //         throw(std::invalid_argument("Unrecognized read mode"));
-    //     }
-    // }
-    // else
-    //     file_rm = read_mode::fast;
-
-        
 
     // File stuff
     bool auto_path = false;
@@ -112,6 +94,8 @@ void YarrBinaryFile::processBatch() {
         // logger->debug("[{}]: batch variables: fh {} rt {} np {} rs {}", name, (bool)fileHandle, (bool)run_thread, (bool)(curEvents != nullptr), (bool)read_success);
         read_success = fromFile();
         // logger->debug("[{}]: batch after variables: rm {} fh {} rt {} np {} rs {}", name, file_rm, (bool)fileHandle, (bool)run_thread, (bool)(curEvents != nullptr), (bool)read_success);
+        if(curEvents->size() == max_events_per_block)
+            break;
     }
 }
 

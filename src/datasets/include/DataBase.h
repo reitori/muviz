@@ -1,6 +1,13 @@
 #ifndef DATA_BASE_H
 #define DATA_BASE_H
 
+// #################################################
+// # Author: Luc Le Pottier, Koji Abel             #
+// # Email: luclepot / kabel at lbl.gov            #
+// # Project: YARR-event-visualizer                #
+// # Description: CLI for data reading interfaces  #
+// #################################################
+
 #include "ClipBoard.h"
 #include "util.hpp"
 
@@ -90,14 +97,14 @@ class DataLoader{
         ~DataLoader() = default;
         virtual void init() = 0;
         virtual void configure(const json &arg_config) {}; // defined by default
-        virtual void connect(ClipBoard<EventData> *arg_output)  {
+        virtual void connect(std::shared_ptr<ClipBoard<EventData> > arg_output)  {
             output = arg_output;
         }
         virtual void run() = 0;
         virtual void join() = 0;
 
     protected:
-        ClipBoard<EventData> *output;
+        std::shared_ptr<ClipBoard<EventData>> output;
         std::unique_ptr<std::thread> thread_ptr;
 };
 

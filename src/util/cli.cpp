@@ -147,8 +147,10 @@ int VisualizerCli::configure() {
 
         if(enable) {
             dataLoaders.push_back(StdDict::getDataLoader(source["type"]));
+            feIdMap[source["name"]] = k;
+            names.push_back(source["name"]);
+            clipboards.push_back(std::make_shared<ClipBoard<EventData>>());
             dataLoaders[k++]->configure(source);
-            clipboards.push_back(std::make_unique<ClipBoard<EventData>>());
         }
         else {
             logger->info("Skipping disabled FE with ID {}, name {}", i, source["name"]);
@@ -158,7 +160,7 @@ int VisualizerCli::configure() {
     logger->info("Initalizing and connecting data loaders...");
     for(int i = 0; i < dataLoaders.size(); i++) {
         dataLoaders[i]->init();
-        dataLoaders[i]->connect(clipboards[i].get());
+        dataLoaders[i]->connect(clipboards[i]);
     }
     return 0;
 }
@@ -177,4 +179,20 @@ int VisualizerCli::stop() {
         logger->info("Clipboard for FE with ID {}: size {} / {}", i, clipboards[i]->getNumDataIn(), clipboards[i]->size());
     }
     return 0;
+}
+
+std::unique_ptr<EventData> VisualizerCli::getData(int fe_id) {
+    if(!(fe_id >= 0 && fe_id < clipboards.size())) {
+        logger->error("No frontend with index {} found in list! Returned data is nullptr", fe_id);
+        return nullptr;
+    }
+    return clipboards[fe_id]->popData();
+}
+
+std::unique_ptr<EventData> VisualizerCli::getData(std::string fe_id) {
+    if(feIdMap.find(fe_id) == feIdMap.end()) {
+        logger->error("No frontend with name {} found in list! Returned data is nullptr", fe_id);
+        return nullptr;
+    }
+    return clipboards[feIdMap[fe_id]]->popData();
 }
