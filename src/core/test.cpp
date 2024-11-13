@@ -18,17 +18,34 @@ namespace
 
 bool showdemowin = true;
 
+
+struct FramebufferData{
+    GLuint FBO, RBO, texture_id;
+    float m_width, m_height;
+};
+
+//GLFW and GLAD things
 void initGLFW();
+GLFWwindow* createOpenGLContext(int width, int height);
+static void GLFWErrorCallback(int err, const char* message);
+FramebufferData createFramebuffer(float width, float height);
+void resizeFramebuffer(FramebufferData& data, float width, float height);
+
+
+//Dockspace functions
 void initImGUI(GLFWwindow* window);
 void shutdownImGUI();
-GLFWwindow* createOpenGLContext(int width, int height);
 void dockspaceSetup();
 void dockspaceInit();
 void dockspaceFrame();
-void frame(GLFWwindow* window);
-static void GLFWErrorCallback(int err, const char* message);
 
-void createFramebuffer();
+//Frame
+void frame(GLFWwindow* window);
+
+//Scene View
+FramebufferData sceneFramebuffer;
+void createSceneView();
+void renderSceneView();
 
 float color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 
@@ -74,7 +91,6 @@ void initImGUI(GLFWwindow* window){
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init();
@@ -162,12 +178,15 @@ void dockspaceInit(){
             // split the dockspace into 2 nodes -- DockBuilderSplitNode takes in the following args in the following order
             //   window ID to split, direction, fraction (between 0 and 1), the final two setting let's us choose which id we want (which ever one we DON'T set as NULL, will be returned by the function)
             //                                                              out_id_at_dir is the id of the node in the direction we specified earlier, out_id_at_opposite_dir is in the opposite direction
-            auto dock_id_right = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, 0.2f, nullptr, &dockspace_id);
-            auto dock_id_down = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Down, 0.25f, nullptr, &dockspace_id);
+            ImGuiID dock_id_right, dock_id_down;
+            
+            ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, 0.2f, &dock_id_right, &dockspace_id);
+            ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Down, 0.25f, &dock_id_down, &dockspace_id);
 
             // we now dock our windows into the docking node we made above
             ImGui::DockBuilderDockWindow("Right", dock_id_right);
             ImGui::DockBuilderDockWindow("Down", dock_id_down);
+            ImGui::DockBuilderDockWindow("Scene", dockspace_id);
             ImGui::DockBuilderFinish(dockspace_id);
         }
     }
@@ -175,9 +194,7 @@ void dockspaceInit(){
     {
         ImGui::Begin("Right");
         ImGui::Text("Hello World");
-        if(ImGui::ColorPicker4("Change Screen", color)){
-            glClearColor(color[0], color[1], color[2], color[3]);
-        }
+        ImGui::ColorPicker4("Change Screen", color);
         ImGui::End();
     }
 
@@ -187,6 +204,9 @@ void dockspaceInit(){
         ImGui::End();
     }
 
+    {
+        createSceneView();
+    }
     ImGui::End();
 
     ImGui::Render();
@@ -225,7 +245,10 @@ void frame(GLFWwindow* window){
         ImGui::Text("This is a down window hopefully");
         ImGui::End();
     }
-    ImGui::ShowDemoWindow();
+
+    {   //Scene window
+        renderSceneView();
+    }
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -237,4 +260,81 @@ void frame(GLFWwindow* window){
 
 static void GLFWErrorCallback(int err, const char* message){
     logger->error("GLFW Code {0}: {1}", err, message);
+}
+
+
+FramebufferData createFramebuffer(float width, float height){
+    GLuint FBO, RBO, texture_id;
+    glGenFramebuffers(1, &FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
+	glGenTextures(1, &texture_id);
+	glBindTexture(GL_TEXTURE_2D, texture_id);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_id, 0);
+
+	glGenRenderbuffers(1, &RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!\n";
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    return FramebufferData{FBO, RBO, texture_id, width, height};
+}
+
+
+//This binds the texture 
+void resizeFramebuffer(FramebufferData& data, float width, float height){
+    glBindTexture(GL_TEXTURE_2D, data.texture_id);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, data.texture_id, 0);
+
+	glBindRenderbuffer(GL_RENDERBUFFER, data.RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, data.RBO);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    data.m_width = width;
+    data.m_height = height;
+}
+
+void createSceneView(){
+    ImGui::Begin("Scene");
+    sceneFramebuffer = createFramebuffer(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
+    ImGui::End();
+}
+
+void renderSceneView(){
+    GLint prevViewport[4];
+    glGetIntegerv(GL_VIEWPORT, prevViewport);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, sceneFramebuffer.FBO);
+        glClearColor(color[0], color[1], color[2], color[3]);
+        glClear(GL_COLOR_BUFFER_BIT);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    ImGui::Begin("Scene");
+        ImVec2 windim = ImGui::GetContentRegionAvail();
+        if(windim.x != sceneFramebuffer.m_width || windim.y != sceneFramebuffer.m_height){
+            resizeFramebuffer(sceneFramebuffer, windim.x, windim.y);
+        }
+        glViewport(0, 0, windim.x, windim.y);
+
+        ImVec2 bottomRight = ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + ImGui::GetWindowSize().y);
+        ImGui::GetWindowDrawList()->AddImage(sceneFramebuffer.texture_id, ImGui::GetCursorPos(), bottomRight, ImVec2(0, 1), ImVec2(1, 0));
+    ImGui::End();
+
+    glViewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3]);
 }
