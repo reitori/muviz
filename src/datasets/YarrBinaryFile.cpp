@@ -103,11 +103,11 @@ void YarrBinaryFile::configure(const json &config) {
         throw(std::invalid_argument("Path " + filename + " could not be opened!"));
 }
 
-sig_atomic_t signaled = 0;
+// sig_atomic_t signaled = 0;
 void YarrBinaryFile::processBatch() {
     int sleep_step = 0;
     bool read_success = true;
-    while(fileHandle && run_thread && (curEvents != nullptr) && read_success && signaled == 0) { // basic case of "block lives"
+    while(fileHandle && run_thread && (curEvents != nullptr) && read_success) { // basic case of "block lives"
         // logger->debug("[{}]: batch variables: fh {} rt {} np {} rs {}", name, (bool)fileHandle, (bool)run_thread, (bool)(curEvents != nullptr), (bool)read_success);
         switch(file_rm) {
             case read_mode::fast:
@@ -124,13 +124,13 @@ void YarrBinaryFile::processBatch() {
 }
 
 void YarrBinaryFile::process() {
-    signaled = 0;
-    signal(SIGINT, [](int signum){signaled = 1;});
-    signal(SIGUSR1, [](int signum){signaled = 1;});
+    // signaled = 0;
+    // signal(SIGINT, [](int signum){signaled = 1;});
+    // signal(SIGUSR1, [](int signum){signaled = 1;});
 
     batch_n = 0;
     std::chrono::steady_clock::time_point last = std::chrono::steady_clock::now(), now;
-    while(run_thread && signaled == 0) {
+    while(run_thread) {
         // Make new block of events
         if(!curEvents)
             curEvents = std::make_unique<EventData>();
