@@ -121,11 +121,11 @@ void YarrBinaryFile::process() {
     // signal(SIGUSR1, [](int signum){signaled = 1;});
 
     batch_n = 0;
+    curEvents = std::make_unique<EventData>();
+
     std::chrono::steady_clock::time_point last = std::chrono::steady_clock::now(), now;
+
     while(run_thread) {
-        // Make new block of events
-        if(!curEvents)
-            curEvents = std::make_unique<EventData>();
         processBatch();
         now = std::chrono::steady_clock::now();
         if(curEvents->size() > 0) {
@@ -134,11 +134,14 @@ void YarrBinaryFile::process() {
                 "[{}] Batch {}: {} events in {} seconds = {} ev/s", 
                 name, batch_n, curEvents->size(), diff, curEvents->size()/diff
             );
+            // Push data and make new block of events
             output->pushData(std::move(curEvents));
+            curEvents = std::make_unique<EventData>();
+
             batch_n++;
         }
-        last = now;
         std::this_thread::sleep_for(std::chrono::microseconds(block_timeout));
+        last = std::chrono::steady_clock::now();
     }
 }
 
@@ -172,8 +175,8 @@ bool YarrBinaryFile::fromFile() {
 
     header_read = true;
     
-    curEvents->newEvent(this_tag, this_l1id, this_bcid);
 
+    curEvents->newEvent(this_tag, this_l1id, this_bcid);
     readHits();
 
     if(!fileHandle) {
@@ -181,8 +184,13 @@ bool YarrBinaryFile::fromFile() {
         fileHandle.seekg(filePos);
         if(hit_read)
             logger->debug("[{}] Failed to read event hits - seeking file position {}", name, filePos);
+        hit_read = false;
+        curEvents->delete_back();
+
         return false;
     }
+    
+
     hit_read = true;
 
     // logger->debug("[{}]: event {}, pos {}: {} | {} | {} | {}", name, total_events, filePos, this_tag, this_l1id, this_bcid, this_t_hits);

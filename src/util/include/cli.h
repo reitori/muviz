@@ -12,10 +12,15 @@
 #include <vector>
 #include <iostream>
 #include <getopt.h>
-#include "logging.h"
 #include <fstream>
 
-namespace viz_cli {
+#include "logging.h"
+#include "AllDataLoaders.h"
+#include "DataBase.h"
+
+namespace cli_helpers {
+    auto logger = logging::make_log("VizCLI");
+    
     struct ScanOpts {
         // std::string loggingPattern = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
         std::string configPath;
@@ -24,13 +29,30 @@ namespace viz_cli {
         bool verbose;
     };
 
-    void setupLoggers(bool verbose);
-
-    void printHelp(); 
-
-    int parseOptions(int argc, char *argv[], ScanOpts &scanOpts);
-    
     json openJsonFile(const std::string& filepath);
+
+    void setupLoggers(bool verbose);
 }
+
+class VisualizerCli {
+    public:
+        VisualizerCli();
+        ~VisualizerCli() = default;
+
+        int init(int argc, char** argv);
+        int configure();
+        int start();
+        int stop();
+
+    private:
+        int parseOptions(int argc, char *argv[]);
+        void printHelp();
+        
+        cli_helpers::ScanOpts scanOpts;
+        
+        json config;
+        std::vector<std::unique_ptr<DataLoader>> dataLoaders;
+        std::vector<std::unique_ptr<ClipBoard<EventData>>> clipboards;
+};
 
 #endif

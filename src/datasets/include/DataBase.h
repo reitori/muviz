@@ -63,6 +63,11 @@ class EventData {
             curEvent = &events.back();
         }
 
+        void delete_back() {
+            events.pop_back();
+            curEvent = &events.back();
+        }
+
         void addHit(Hit hit) {
             curEvent->addHit(hit);
         }

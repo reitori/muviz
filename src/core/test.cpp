@@ -11,9 +11,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-namespace
+namespace 
 {
-    auto logger = logging::make_log("VisualizerCLI");
+    auto logger = logging::make_log("MainLoop");
 }
 
 bool showdemowin = true;
@@ -34,33 +34,9 @@ float color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 
 int main(int argc, char** argv) {
 
+    VisualizerCli cli;
     // option parsing
-    viz_cli::ScanOpts options;
-    int ret = viz_cli::parseOptions(argc, argv, options);
-    
-    viz_cli::setupLoggers(false);
-
-    if (ret != 1) {
-        viz_cli::printHelp();
-        return ret;
-    }
-
-    logging::banner(logger, "Visualizer CLI Program");
-
-    YarrBinaryFile yb;
-    json j;
-
-    std::unique_ptr<ClipBoard<EventData>> cb = std::make_unique<ClipBoard<EventData>>();
-
-    yb.init();
-    yb.connect(cb.get());
-    yb.configure(j);
-    yb.run();
-    // std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-    yb.join();
-
-    logger->info("Data size: {} / {}", cb->getNumDataIn(), cb->size());
-    logger->info("test main end");
+    cli.init(argc, argv);
 
     initGLFW();
     GLFWwindow* window = createOpenGLContext(glfwGetVideoMode(glfwGetPrimaryMonitor())->width, glfwGetVideoMode(glfwGetPrimaryMonitor())->height);

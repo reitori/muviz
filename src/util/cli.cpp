@@ -1,6 +1,7 @@
 #include "cli.h"
 
-namespace viz_cli {
+
+namespace cli_helpers {
 
     void setupLoggers(bool verbose) {
         json loggerConfig;
@@ -10,67 +11,6 @@ namespace viz_cli {
         loggerConfig["outputDir"] = "";
 
         logging::setupLoggers(loggerConfig);
-    }
-
-    void printHelp() {
-
-        spdlog::info("Help:");
-        spdlog::info(" -h: Shows this.");
-        spdlog::info(" -c <config.json> Provide data reader configuration.");
-        spdlog::info(" -v Toggles on debug output (default false).");
-        // std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
-        // std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
-        // std::cout << " -W: Enable using Local DB." << std::endl;
-        // std::cout << " -d <database.json> : Provide database configuration. (Default " << dbCfgPath << ")" << std::endl;
-        // std::cout << " -i <site.json> : Provide site configuration. (Default " << dbSiteCfgPath << ")" << std::endl;
-        // std::cout << " -u <user.json> : Provide user configuration. (Default " << dbUserCfgPath << ")" << std::endl;
-        // std::cout << " -l <log_cfg.json> : Provide logger configuration." << std::endl;
-        // std::cout << " -Q: Set QC scan mode." << std::endl;
-        // std::cout << " -I: Set interactive mode." << std::endl;
-        // std::cout << " --skip-reset: Disable sending global front-end reset command prior to running the scan." << std::endl;
-    }
-
-    int parseOptions(int argc, char *argv[], ScanOpts &scanOpts) {
-        optind = 1; // this is a global libc variable to reset getopt
-
-        for (int i=1;i<argc;i++)
-            scanOpts.commandLineStr.append(std::string(argv[i]).append(" "));
-        scanOpts.progName=argv[0];
-        const struct option long_options[] =
-        {
-            // {"skip-reset", no_argument, 0, 'z'},
-            {"help", no_argument, 0, 'h'},
-            // {"version", no_argument, 0, 'v'},
-            {0, 0, 0, 0}};
-        int c;
-        scanOpts.verbose = false;
-        while (true) {
-            int opt_index=0;
-            c = getopt_long(argc, argv, "hc:v", long_options, &opt_index);
-            int count = 0;
-            if(c == -1) break;
-            switch (c) {
-                case 'h':
-                    printHelp();
-                    return 0;
-                case 'c':
-                    scanOpts.configPath = std::string(optarg);
-                    break;
-                case 'v':
-                    scanOpts.verbose = true;
-                    break;
-                default:
-                    spdlog::critical("Error while parsing command line parameters!");
-                    return -1;
-            }
-        }
-
-        if(scanOpts.configPath.empty()) {
-            spdlog::critical("Configuration file required (-c)");
-            return -1;
-        }
-
-        return 1;
     }
 
     json openJsonFile(const std::string& filepath) {
@@ -83,7 +23,6 @@ namespace viz_cli {
             j = json::parse(file);
         } catch (json::parse_error &e) {
             throw std::runtime_error(e.what());
-            throw std::runtime_error(e.what());
         }
         file.close();
         // variant produces null for some parse errors
@@ -92,4 +31,150 @@ namespace viz_cli {
         }
         return j;
     }
-};
+
+}
+
+using namespace cli_helpers;
+
+void VisualizerCli::printHelp() {
+
+    spdlog::info("Help:");
+    spdlog::info(" -h: Shows this.");
+    spdlog::info(" -c <config.json> Provide data reader configuration.");
+    spdlog::info(" -v Toggles on debug output (default false).");
+    // std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
+    // std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
+    // std::cout << " -W: Enable using Local DB." << std::endl;
+    // std::cout << " -d <database.json> : Provide database configuration. (Default " << dbCfgPath << ")" << std::endl;
+    // std::cout << " -i <site.json> : Provide site configuration. (Default " << dbSiteCfgPath << ")" << std::endl;
+    // std::cout << " -u <user.json> : Provide user configuration. (Default " << dbUserCfgPath << ")" << std::endl;
+    // std::cout << " -l <log_cfg.json> : Provide logger configuration." << std::endl;
+    // std::cout << " -Q: Set QC scan mode." << std::endl;
+    // std::cout << " -I: Set interactive mode." << std::endl;
+    // std::cout << " --skip-reset: Disable sending global front-end reset command prior to running the scan." << std::endl;
+}
+
+
+
+int VisualizerCli::parseOptions(int argc, char *argv[]) {
+    optind = 1; // this is a global libc variable to reset getopt
+
+    for (int i=1;i<argc;i++)
+        scanOpts.commandLineStr.append(std::string(argv[i]).append(" "));
+    scanOpts.progName=argv[0];
+    const struct option long_options[] =
+    {
+        // {"skip-reset", no_argument, 0, 'z'},
+        {"help", no_argument, 0, 'h'},
+        // {"version", no_argument, 0, 'v'},
+        {0, 0, 0, 0}};
+    int c;
+    scanOpts.verbose = false;
+    while (true) {
+        int opt_index=0;
+        c = getopt_long(argc, argv, "hc:v", long_options, &opt_index);
+        int count = 0;
+        if(c == -1) break;
+        switch (c) {
+            case 'h':
+                printHelp();
+                return 0;
+            case 'c':
+                scanOpts.configPath = std::string(optarg);
+                break;
+            case 'v':
+                scanOpts.verbose = true;
+                break;
+            default:
+                spdlog::critical("Error while parsing command line parameters!");
+                return -1;
+        }
+    }
+
+    if(scanOpts.configPath.empty()) {
+        spdlog::critical("Configuration file required (-c)");
+        return -1;
+    }
+
+    return 1;
+}
+
+VisualizerCli::VisualizerCli() {
+
+}
+
+int VisualizerCli::init(int argc, char** argv) {
+
+    int ret = parseOptions(argc, argv);
+    
+    cli_helpers::setupLoggers(scanOpts.verbose);
+
+    if (ret != 1) {
+        printHelp();
+        return ret;
+    }
+
+    logging::banner(logger, "Visualizer CLI Program");
+
+    // option parsing
+    logger->info("Opening configuration file with path {}", scanOpts.configPath);
+    config = cli_helpers::openJsonFile(scanOpts.configPath);
+
+    for(int i = 0; i < dataLoaders.size(); i++) {
+        dataLoaders[i].reset();
+        clipboards[i].reset();
+    }
+    dataLoaders.clear();
+    clipboards.clear();
+    return 0;
+}
+
+int VisualizerCli::configure() {
+    logger->info("Configuring data loaders...");
+    for(int i = 0, k=0; i < config["sources"].size(); i++) {
+        auto source = config["sources"][i];
+        if(!source.contains("name")) {
+            source["name"] = "anon_" + std::to_string(i);
+        }
+        if(config.contains("global_source_config")) {
+            source.merge_patch(config["global_source_config"]);
+        }
+        
+        int enable = 1;
+        if(source.contains("enable")) {
+            enable = (int)source["enable"];
+        }
+
+        if(enable) {
+            dataLoaders.push_back(StdDict::getDataLoader(source["type"]));
+            dataLoaders[k++]->configure(source);
+            clipboards.push_back(std::make_unique<ClipBoard<EventData>>());
+        }
+        else {
+            logger->info("Skipping disabled FE with ID {}, name {}", i, source["name"]);
+        }
+    }
+
+    logger->info("Initalizing and connecting data loaders...");
+    for(int i = 0; i < dataLoaders.size(); i++) {
+        dataLoaders[i]->init();
+        dataLoaders[i]->connect(clipboards[i].get());
+    }
+    return 0;
+}
+
+int VisualizerCli::start() {
+    logger->info("Starting data loaders for {} threads", dataLoaders.size());
+    for(int i = 0; i < dataLoaders.size(); i++) {
+        dataLoaders[i]->run();
+    }
+    return 0;
+}
+
+int VisualizerCli::stop() {
+    for(int i = 0; i < dataLoaders.size(); i++) {
+        dataLoaders[i]->join();
+        logger->info("Clipboard for FE with ID {}: size {} / {}", i, clipboards[i]->getNumDataIn(), clipboards[i]->size());
+    }
+    return 0;
+}

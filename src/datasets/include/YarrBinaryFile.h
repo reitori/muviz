@@ -41,7 +41,7 @@ private:
     std::fstream fileHandle;
     std::streampos filePos;
     std::unique_ptr<EventData> curEvents;
-
+    Event thisEvent;
 };
 
 #endif
