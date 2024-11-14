@@ -13,14 +13,19 @@ add_library(VisualizerLib SHARED
     util/mathtools.cpp
 )
 
-target_link_libraries(VisualizerLib PUBLIC glfw glad imgui)
+target_link_libraries(VisualizerLib PUBLIC pthread rt glfw glad imgui glm)
+target_include_directories(VisualizerLib PUBLIC ${PROJECT_SOURCE_DIR}/src)
 target_include_directories(VisualizerLib PUBLIC datasets/include)
 target_include_directories(VisualizerLib PUBLIC util/include)
 
 add_executable(test 
     core/test.cpp
+    OpenGL/Shader.cpp
 )
-target_link_libraries(test VisualizerLib pthread rt)
+
+target_include_directories(test PUBLIC ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(test VisualizerLib pthread rt glfw glad imgui glm)
+
 set_target_properties(test 
     PROPERTIES 
     LINKER_LANGUAGE CXX
