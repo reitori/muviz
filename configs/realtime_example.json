@@ -1,0 +1,36 @@
+{
+    "global_source_config": {
+        "path": "data/truncated",
+        "auto": true,
+        "type": "YarrBinaryFile",
+        "fps": 100,
+        "block_timeout": 100000,
+        "max_events_per_block": 100000
+    },
+    "sources": [
+        {
+            "name": "t1",
+            "position": [0, 0, 0],
+            "angle": [0, 0, 0],
+            "enable": 0
+        },
+        {
+            "name": "t2",
+            "position": [0, 0, 1],
+            "angle": [0, 0, 0],
+            "enable": 0
+        },
+        {
+            "name": "t3",
+            "position": [0, 0, 2],
+            "angle": [0, 0, 0],
+            "enable": 1
+        },
+        {
+            "name": "t4",
+            "position": [0, 0, 3],
+            "angle": [0, 0, 0],
+            "enable": 0
+        }
+    ]
+}
