@@ -47,7 +47,9 @@ class VisualizerCli {
         int stop();
 
         // Config passing
-        const json& getConfig() {return config;}
+        void listFEs();
+        const json& getConfig(int fe_id);
+        const json& getConfig(std::string fe_id);
         std::unique_ptr<EventData> getData(int fe_id);
         std::unique_ptr<EventData> getData(std::string fe_id);
         size_t getSize() {return dataLoaders.size();}
@@ -62,6 +64,7 @@ class VisualizerCli {
         std::vector<std::unique_ptr<DataLoader>> dataLoaders;
         std::vector<std::shared_ptr<ClipBoard<EventData>>> clipboards;
         std::map<std::string, int> feIdMap;
+        std::vector<int> configIdMap;
         std::vector<std::string> names;
 };
 

@@ -126,7 +126,7 @@ int VisualizerCli::init(int argc, char** argv) {
     }
     dataLoaders.clear();
     clipboards.clear();
-    return 0;
+    return 1;
 }
 
 int VisualizerCli::configure() {
@@ -139,16 +139,25 @@ int VisualizerCli::configure() {
         if(config.contains("global_source_config")) {
             source.merge_patch(config["global_source_config"]);
         }
-        
         int enable = 1;
         if(source.contains("enable")) {
             enable = (int)source["enable"];
         }
 
         if(enable) {
+            if(!source.contains("position")) {
+                logger->error("Config for frontend {} with name '{}' does not contain position vector!", k, source["name"]);
+                return -1; // throw std::invalid_argument("missing position vector in config");
+            }
+            if(!source.contains("angle")) {
+                logger->error("Config for frontend {} with name '{}' does not contain angle vector!", k, source["name"]);
+                return -1; // throw std::invalid_argument("missing angle vector in config");
+            }
+            
             dataLoaders.push_back(StdDict::getDataLoader(source["type"]));
             feIdMap[source["name"]] = k;
             names.push_back(source["name"]);
+            configIdMap.push_back(i);
             clipboards.push_back(std::make_shared<ClipBoard<EventData>>());
             dataLoaders[k++]->configure(source);
         }
@@ -179,6 +188,39 @@ int VisualizerCli::stop() {
         logger->info("Clipboard for FE with ID {}: size {} / {}", i, clipboards[i]->getNumDataIn(), clipboards[i]->size());
     }
     return 0;
+}
+
+void VisualizerCli::listFEs() {
+    for(int i = 0; i < dataLoaders.size(); i++) {
+        
+        auto temp = getConfig(i);
+
+        logger->info("[{}]: FE with ID {}", names[i], i);
+        logger->info("[{}]:  - Clipboard I/O sizes {}/{}", names[i], clipboards[i]->getNumDataIn(), clipboards[i]->getNumDataOut());
+        
+        // std::vector<int> position = temp["position"].get<std::vector<int>>();
+        // std::vector<int> angle = temp["angle"].get<std::vector<int>>();
+
+        logger->info("[{}]:  - Position/angle vectors: {} / {}", names[i], 
+            temp["position"].dump(), temp["angle"].dump()
+        );
+    }
+}
+
+const json& VisualizerCli::getConfig(int fe_id) {
+    if(!(fe_id >= 0 && fe_id < clipboards.size())) {
+        logger->error("No frontend with index {} found in list! Returned config is empty", fe_id);
+        throw std::invalid_argument("Invalid frontend config requested!");
+    }
+    return config["sources"][configIdMap[fe_id]];
+}
+
+const json& VisualizerCli::getConfig(std::string fe_id) {
+    if(feIdMap.find(fe_id) == feIdMap.end()) {
+        logger->error("No frontend with name {} found in list! Returned config is empty", fe_id);
+        throw std::invalid_argument("Invalid frontend config requested!");
+    }
+    return config["sources"][configIdMap[feIdMap[fe_id]]];
 }
 
 std::unique_ptr<EventData> VisualizerCli::getData(int fe_id) {

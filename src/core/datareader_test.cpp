@@ -15,9 +15,14 @@ int main(int argc, char** argv) {
     int cli_status;
     VisualizerCli cli;
 
-    cli_status = cli.init(argc, argv);
-    cli_status = cli.configure();
-    cli_status = cli.start();
+    cli_status = cli.init(argc, argv); if(cli_status <= 0) return cli_status;
+    cli_status = cli.configure(); if(cli_status < 0) return cli_status;
+
+    // Printout of FE statuses
+    cli.listFEs();
+
+    // Start CLI fes
+    cli_status = cli.start(); if(cli_status < 0) return cli_status;
 
     signal(SIGINT, [](int signum){signaled = 1;});
     signal(SIGTERM, [](int signum){signaled = 1;});
@@ -25,7 +30,6 @@ int main(int argc, char** argv) {
 
     // while we don't see CTRL-C or SIGUSR1 
     while(signaled == 0) {
-
 
         // MAIN EVENT LOOP HERE
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -43,14 +47,12 @@ int main(int argc, char** argv) {
         }
         if(size > 0)
             logger->debug("Total hit event size for this frame, with {} FEs: {}", nfe, size);
-
-
     }
     
     std::cout << "\r";
     logger->info("Caught interrupt, stopping threads");
     
-    cli_status = cli.stop();
+    cli_status = cli.stop(); if(cli_status < 0) return cli_status;
     logger->info("End run");
     return 0;
 }
