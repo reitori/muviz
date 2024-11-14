@@ -10,15 +10,17 @@ add_library(VisualizerLib SHARED
     util/include/logging.h
     util/logging.cpp
     util/cli.cpp
+    util/mathtools.cpp
 )
 
+target_link_libraries(VisualizerLib PUBLIC glfw glad imgui)
 target_include_directories(VisualizerLib PUBLIC datasets/include)
 target_include_directories(VisualizerLib PUBLIC util/include)
 
 add_executable(test 
     core/test.cpp
 )
-target_link_libraries(test VisualizerLib pthread rt glfw glad imgui)
+target_link_libraries(test VisualizerLib pthread rt)
 set_target_properties(test 
     PROPERTIES 
     LINKER_LANGUAGE CXX
