@@ -1,11 +1,7 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
-#include "header.h"
-
-namespace{
-     auto logger = logging::make_log("WindowLogger");
-}
+#include "core/header.h"
 
 
 namespace viz{

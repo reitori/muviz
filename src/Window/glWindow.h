@@ -1,9 +1,8 @@
 #ifndef GLWINDOW_H
 #define GLWINDOW_H
 
-#include <iostream>
-#include "Window.h"
-#include "logging.h"
+#include "core/header.h"
+#include "Window/window.h"
 
 #include <GLFW/glfw3.h>
 

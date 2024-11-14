@@ -1,7 +1,7 @@
 #ifndef FRAMEBUFFER_H
 #define FRAMEBUFFER_H
 
-#include "header.h"
+#include "core/header.h"
 
 namespace viz
 {

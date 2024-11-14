@@ -13,10 +13,6 @@
 #include "Window/glWindow.h"
 
 namespace viz{
-    namespace{
-        auto logger = logging::make_log("VisualizerCLI");
-    }
-
     class Application{
         private:
             static bool coreInit; //At some point maybe change this to bit flags indicating which API's are initialized ex: 011 logger init true, glfw init true, glad init true

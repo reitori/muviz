@@ -4,10 +4,11 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/src",
+                "${workspaceFolder}/src/",
                 "${workspaceFolder}/deps/glad",
                 "${workspaceFolder}/deps/imgui/include",
-                "${workspaceFolder}/"
+                "${workspaceFolder}/",
+                "${workspaceFolder}/build/_deps/glm-src"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

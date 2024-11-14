@@ -10,7 +10,7 @@ namespace viz{
         //TODO: Check initialization status the Application flags
         m_window = glfwCreateWindow(width, height, name, NULL, NULL);
         if(m_window == NULL){
-            logger->error("Failed to create GLFW window");
+            m_appLogger->error("Failed to create GLFW window");
             glfwDestroyWindow(m_window);
         }
         else{

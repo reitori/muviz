@@ -15,9 +15,11 @@ target_include_directories(VisualizerLib PUBLIC util/include)
 
 add_executable(test 
     core/test.cpp
+    OpenGL/Shader.cpp
     datasets/YarrBinary.cpp
 )
-target_link_libraries(test VisualizerLib pthread rt glfw glad imgui)
+target_include_directories(test PUBLIC ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(test VisualizerLib pthread rt glfw glad imgui glm)
 set_target_properties(test 
     PROPERTIES 
     LINKER_LANGUAGE CXX

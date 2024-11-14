@@ -1,8 +1,8 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-#include "Framebuffer.h"
-#include "Shader.h"
+#include "OpenGL/Framebuffer.h"
+#include "OpenGL/Shader.h"
 
 namespace viz{
     class Renderer{
