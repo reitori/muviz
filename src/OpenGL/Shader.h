@@ -13,7 +13,7 @@
 namespace viz{
     class Shader{
         private:
-            uint16_t m_id;
+            GLuint m_id;
             
             void checkCompileErrors(GLuint shader, const char* type);
 
@@ -67,6 +67,8 @@ namespace viz{
             inline void setMat4(const char* name, const glm::mat4 &mat) {
                 glUniformMatrix4fv(glGetUniformLocation(m_id, name), 1, GL_FALSE, &mat[0][0]);
             }
+
+            ~Shader() {glDeleteShader(m_id);}
     };
 }
 
