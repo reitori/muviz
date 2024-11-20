@@ -43,7 +43,7 @@ struct pixelHit {
 class VisualizerCli {
     public:
         VisualizerCli();
-        ~VisualizerCli() = default;
+        ~VisualizerCli();
 
         // Runtime usage
         int init(int argc, char** argv);
@@ -55,6 +55,7 @@ class VisualizerCli {
         void listFEs();
         const json& getConfig(int fe_id);
         const json& getConfig(std::string fe_id);
+        const json& getMasterConfig() {return config;}
 
         std::unique_ptr<EventData> getRawData(int fe_id);
         std::unique_ptr<EventData> getRawData(std::string fe_id);

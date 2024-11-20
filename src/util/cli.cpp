@@ -102,6 +102,10 @@ VisualizerCli::VisualizerCli() {
 
 }
 
+VisualizerCli::~VisualizerCli() {
+
+}
+
 int VisualizerCli::init(int argc, char** argv) {
 
     int ret = parseOptions(argc, argv);
@@ -185,6 +189,12 @@ int VisualizerCli::stop() {
     for(int i = 0; i < dataLoaders.size(); i++) {
         dataLoaders[i]->join();
         logger->info("Clipboard for FE with ID {}: size {} / {}", i, clipboards[i]->getNumDataIn(), clipboards[i]->size());
+        dataLoaders[i].reset();
+        while(clipboards[i]->size() > 0) {
+            auto raw = clipboards[i]->popData();
+            raw.reset();
+        }   
+        clipboards[i].reset();
     }
     return 0;
 }

@@ -5,7 +5,7 @@
         "type": "YarrBinaryFile",
         "fps": 100,
         "block_timeout": 100000,
-        "max_events_per_block": 10000
+        "max_events_per_block": 1000000
     },
     "sources": [
         {
