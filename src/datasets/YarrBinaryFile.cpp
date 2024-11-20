@@ -140,7 +140,7 @@ void YarrBinaryFile::readHits() {
     for (unsigned ii = 0; ii < this_t_hits; ii++) {
         Hit hit;
         fileHandle.read((char*)&hit, sizeof(Hit));
-        curEvents->curEvent->addHit(hit);
+        curEvents->addHit(hit);
         total_hits++;
     } // ii
 }

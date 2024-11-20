@@ -28,6 +28,13 @@ int main(int argc, char** argv) {
     signal(SIGTERM, [](int signum){signaled = 1;});
     signal(SIGSTOP, [](int signum){signaled = 1;});
 
+    // for(int i = 0; i < cli.getSize(); i++) {
+    //     const json& config = cli.getConfig(i);
+    //     std::vector<float> position = config["position"].get<std::vector<float>>();
+    //     std::vector<float> angle = config["angle"].get<std::vector<float>>();
+    //     logger->info("FE with ID {}: position {},{},{}", i, position[0], position[1], position[2]);
+    // }
+
     // while we don't see CTRL-C or SIGUSR1 
     while(signaled == 0) {
 
@@ -37,8 +44,9 @@ int main(int argc, char** argv) {
         // collect and count data
         long int size = 0;
         int nfe= 0;
+        
         for(int i = 0; i < cli.getSize(); i++) {
-            auto data = cli.getData(i);
+            std::unique_ptr<std::vector<pixelHit>> data = cli.getData(i, true);
             if(data){
                 size += data->size();
                 data.reset();

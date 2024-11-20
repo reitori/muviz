@@ -77,10 +77,12 @@ class EventData {
 
         void addHit(Hit hit) {
             curEvent->addHit(hit);
+            totalHits++;
         }
 
         void addHit(unsigned arg_row, unsigned arg_col, unsigned arg_timing) {
             curEvent->addHit(arg_row, arg_col, arg_timing);
+            totalHits++;
         }
 
         size_t size() {
@@ -89,6 +91,7 @@ class EventData {
 
         Event* curEvent;
         std::vector<Event> events;
+        unsigned totalHits;
 };
 
 class DataLoader{
