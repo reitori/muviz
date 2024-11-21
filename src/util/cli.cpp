@@ -1,6 +1,5 @@
 #include "cli.h"
 
-
 namespace cli_helpers {
 
     void setupLoggers(bool verbose) {
@@ -103,6 +102,10 @@ VisualizerCli::VisualizerCli() {
 
 }
 
+VisualizerCli::~VisualizerCli() {
+
+}
+
 int VisualizerCli::init(int argc, char** argv) {
 
     int ret = parseOptions(argc, argv);
@@ -186,6 +189,12 @@ int VisualizerCli::stop() {
     for(int i = 0; i < dataLoaders.size(); i++) {
         dataLoaders[i]->join();
         logger->info("Clipboard for FE with ID {}: size {} / {}", i, clipboards[i]->getNumDataIn(), clipboards[i]->size());
+        dataLoaders[i].reset();
+        while(clipboards[i]->size() > 0) {
+            auto raw = clipboards[i]->popData();
+            raw.reset();
+        }   
+        clipboards[i].reset();
     }
     return 0;
 }
@@ -223,7 +232,7 @@ const json& VisualizerCli::getConfig(std::string fe_id) {
     return config["sources"][configIdMap[feIdMap[fe_id]]];
 }
 
-std::unique_ptr<EventData> VisualizerCli::getData(int fe_id) {
+std::unique_ptr<EventData> VisualizerCli::getRawData(int fe_id) {
     if(!(fe_id >= 0 && fe_id < clipboards.size())) {
         logger->error("No frontend with index {} found in list! Returned data is nullptr", fe_id);
         return nullptr;
@@ -231,10 +240,39 @@ std::unique_ptr<EventData> VisualizerCli::getData(int fe_id) {
     return clipboards[fe_id]->popData();
 }
 
-std::unique_ptr<EventData> VisualizerCli::getData(std::string fe_id) {
+std::unique_ptr<EventData> VisualizerCli::getRawData(std::string fe_id) {
     if(feIdMap.find(fe_id) == feIdMap.end()) {
         logger->error("No frontend with name {} found in list! Returned data is nullptr", fe_id);
         return nullptr;
     }
-    return clipboards[feIdMap[fe_id]]->popData();
+    return getRawData(feIdMap[fe_id]);
+}
+
+std::unique_ptr<std::vector<pixelHit>> VisualizerCli::getData(int fe_id, bool get_all) {
+    auto result = std::make_unique<std::vector<pixelHit>>();
+    // clipboards[fe_id].size();
+    std::unique_ptr<EventData> proc;
+    do {
+        if(proc) proc.reset();
+        proc = getRawData(fe_id);
+        if(proc) {
+            result->reserve(result->size() + proc->totalHits);
+            for(int i = 0; i < proc->size(); i++) {
+                for(int j = 0; j < proc->events[i].hits.size(); j++) {
+                    result->push_back({(uint16_t)proc->events[i].hits[j].row, (uint16_t)proc->events[i].hits[j].col});
+                }
+            }
+        }
+    } 
+    while(proc && get_all);
+
+    return result;
+}
+
+std::unique_ptr<std::vector<pixelHit>> VisualizerCli::getData(std::string fe_id, bool get_all) {
+    if(feIdMap.find(fe_id) == feIdMap.end()) {
+        logger->error("No frontend with name {} found in list! Returned data is nullptr", fe_id);
+        return nullptr;
+    }
+    return getData(feIdMap[fe_id], get_all);
 }

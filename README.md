@@ -50,3 +50,17 @@ Then, quit and restart your X11 server.
 - `core`: core functionality
 - `util`: utility functions
 - `datasets`: dataset loaders and adapters
+
+## `dataloader_test`
+
+Run this binary to test the functionality of the data reader. Some example configuration files covering the `YarrBinaryFile` format are included, with some test data. 
+
+For a "fixed-frame" test, where the only 100 events at a time are read, run (optionally with `-v`` for verbose output)
+```
+./bin/dataloader_test -c configs/event_count_example.json
+```
+
+For a "real-time" test, where all available data is read at once, run
+```
+./bin/dataloader_test -c configs/realtime_example.json -v
+```
