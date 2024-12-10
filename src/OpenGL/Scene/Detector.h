@@ -88,8 +88,8 @@ namespace viz{
 
             glm::mat4 m_transform;
             std::vector<Chip> m_chips;
-            std::vector<glm::mat4> m_chipTransforms, m_Hits; //stored separately from within Chip to speed up data reading when passing into buffers
-            std::vector<glm::vec4> m_chipColors;
+            std::vector<glm::mat4> m_chipTransforms, m_hitTransforms; //stored separately from within Chip to speed up data reading when passing into buffers
+            std::vector<glm::vec4> m_chipColors, m_hitColors;
 
             glm::vec3 hitScale = glm::vec3(0.05f, 0.05f, 0.05f);
     };

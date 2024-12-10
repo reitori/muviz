@@ -31,7 +31,8 @@ namespace viz{
         m_nfe = 0;
         m_size = 0;
 
-        for(int i = 0; i < cli.getSize(); i++) {
+        int i = 0;
+        for(; i < cli.getSize(); i++) {
             std::unique_ptr<std::vector<pixelHit>> data = cli.getData(i, true);
             glm::vec3 chipScale = m_chips[i].scale;
             if(data){
@@ -47,13 +48,16 @@ namespace viz{
                     float diffy = (float)(col / currChip.maxCols) * (2.0f * currChip.scale[1]);
 
                     glm::vec3 posRelToChip =  glm::vec3(diffx, diffy, 0.0f) - currChip.scale;
-                    m_Hits.push_back(transform(hitScale, currChip.eulerRot, currChip.pos + posRelToChip));
+                    m_hitTransforms.push_back(transform(hitScale, currChip.eulerRot, currChip.pos + posRelToChip));
+                    m_hitColors.push_back(glm::vec4(1.0f, 0.2509f, 0.0235f, 0.95f));
                 }
 
                 data.reset();
                 m_nfe++;
             }
         }
+
+        ChipMesh.setInstances(i, m_hitTransforms, m_hitColors);
     }
 
     void Detector::renderChips(const Shader& shader){
