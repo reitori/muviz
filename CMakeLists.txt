@@ -65,7 +65,6 @@ cmake_policy (SET CMP0072 OLD)
 find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIR})
 
-
 # install(TARGETS test DESTINATION ${PROJECT_BINARY_DIR}/bin)
 
 # find_package(glfw REQUIRED)

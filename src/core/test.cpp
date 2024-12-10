@@ -1,5 +1,5 @@
 #include "DataBase.h"
-#include "YarrBinary.h"
+#include "YarrBinaryFile.h"
 #include <iostream>
 #include "cli.h"
 
@@ -10,7 +10,6 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -121,33 +120,10 @@ glm::mat4 proj = glm::mat4(1.0f);
 
 int main(int argc, char** argv) {
 
-    // option parsing
-    ScanOpts options;
-    int ret = parseOptions(argc, argv, options);
+    VisualizerCli cli;
     
-    setupLoggers();
-
-    if (ret != 1) {
-        printHelp();
-        return ret;
-    }
-
-    logging::banner(viz::m_appLogger, "Visualizer CLI Program");
-
-    YarrBinary yb;
-    json j;
-
-    std::unique_ptr<ClipBoard<EventData>> cb = std::make_unique<ClipBoard<EventData>>();
-
-    yb.init();
-    yb.connect(cb.get());
-    yb.configure(j);
-    yb.run();
-    // std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-    yb.join();
-
-    viz::m_appLogger->info("Data size: {} / {}", cb->getNumDataIn(), cb->size());
-    viz::m_appLogger->info("test main end");
+    // option parsing
+    cli.init(argc, argv);
 
     //OpenGL Initialization BEGIN
     initGLFW();

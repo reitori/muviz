@@ -1,12 +1,20 @@
 #ifndef DATA_BASE_H
 #define DATA_BASE_H
 
+// #################################################
+// # Author: Luc Le Pottier, Koji Abel             #
+// # Email: luclepot / kabel at lbl.gov            #
+// # Project: YARR-event-visualizer                #
+// # Description: CLI for data reading interfaces  #
+// #################################################
+
 #include "ClipBoard.h"
 #include "util.hpp"
 
 #include <memory>
 #include <thread>
 #include <vector>
+#include <csignal>
 
 struct Hit {
     uint16_t col : 16;
@@ -47,7 +55,7 @@ class Event {
 
         uint16_t l1id;
         uint16_t bcid;
-        uint16_t tag;
+        uint32_t tag;
         uint16_t nHits;
         std::vector<Hit> hits;
 };
@@ -62,12 +70,19 @@ class EventData {
             curEvent = &events.back();
         }
 
+        void delete_back() {
+            events.pop_back();
+            curEvent = &events.back();
+        }
+
         void addHit(Hit hit) {
             curEvent->addHit(hit);
+            totalHits++;
         }
 
         void addHit(unsigned arg_row, unsigned arg_col, unsigned arg_timing) {
             curEvent->addHit(arg_row, arg_col, arg_timing);
+            totalHits++;
         }
 
         size_t size() {
@@ -76,22 +91,23 @@ class EventData {
 
         Event* curEvent;
         std::vector<Event> events;
+        unsigned totalHits;
 };
 
 class DataLoader{
     public:
         DataLoader() = default;
         ~DataLoader() = default;
-        virtual void init() {};
+        virtual void init() = 0;
         virtual void configure(const json &arg_config) {}; // defined by default
-        virtual void connect(ClipBoard<EventData> *arg_output)  {
+        virtual void connect(std::shared_ptr<ClipBoard<EventData> > arg_output)  {
             output = arg_output;
         }
         virtual void run() = 0;
         virtual void join() = 0;
 
     protected:
-        ClipBoard<EventData> *output;
+        std::shared_ptr<ClipBoard<EventData>> output;
         std::unique_ptr<std::thread> thread_ptr;
 };
 

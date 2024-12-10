@@ -1,0 +1,29 @@
+{
+    "viz_config": {
+        "frame_time": 500
+    },
+    "global_source_config": {
+        "path": "data",
+        "auto": true,
+        "type": "YarrBinaryFile",
+        "fps": 100,
+        "block_timeout": 100000,
+        "max_events_per_block": 10
+    },
+    "sources": [
+        {
+            "name": "test_chip1",
+            "position": [0, 0, 0],
+            "angle": [0, 0, 0],
+            "size": [20, 20],
+            "enable": 1
+        },
+        {
+            "name": "test_chip2",
+            "position": [0, 0, 1],
+            "angle": [0, 0, 0],
+            "size": [20, 20],
+            "enable": 1
+        }
+    ]
+}
