@@ -78,7 +78,7 @@ namespace viz{
             m_appLogger->error("Mesh Instancing: Number of transforms not equal to number of colors.");
             return;
         }
-        std::type_t vec4Size = sizeof(glm::vec4);
+        std::size_t vec4Size = sizeof(glm::vec4);
 
         glBindVertexArray(m_VAO);
         glBindBuffer(GL_ARRAY_BUFFER, m_colorsVBO);
@@ -119,9 +119,9 @@ namespace viz{
         glBindVertexArray(m_VAO);
 
         glBindBuffer(GL_ARRAY_BUFFER, m_transformsVBO);
-        glBufferData(GL_ARRAY_BUFFER, instances * sizeof(glm::mat4), &transforms[0], GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, m_numInstances * sizeof(glm::mat4), &transforms[0], GL_STATIC_DRAW);
 
-        std::type_t vec4Size = sizeof(glm::vec4);
+        std::size_t vec4Size = sizeof(glm::vec4);
         glEnableVertexAttribArray(3);
         glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
         glEnableVertexAttribArray(4);
@@ -139,18 +139,18 @@ namespace viz{
         glBindVertexArray(0);
     }
 
-    void SimpleMesh::setInstanceColors(const std::vector<glm::vec>& colors){
-        if(transforms.size() != m_numInstances){
+    void SimpleMesh::setInstanceColors(const std::vector<glm::vec4>& colors){
+        if(colors.size() != m_numInstances){
             m_appLogger->error("Mesh Instancing: Internal number of instances does not match provided number of colors");
             return;
         }
 
         glBindVertexArray(m_VAO);
-        std::type_t vec4Size = sizeof(glm::vec4);
+        std::size_t vec4Size = sizeof(glm::vec4);
 
         glBindVertexArray(m_VAO);
         glBindBuffer(GL_ARRAY_BUFFER, m_colorsVBO);
-        glBufferData(GL_ARRAY_BUFFER, instances * sizeof(glm::vec4), &colors[0], GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, m_numInstances * sizeof(glm::vec4), &colors[0], GL_STATIC_DRAW);
 
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, vec4Size, (void*)0);

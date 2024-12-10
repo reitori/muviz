@@ -38,7 +38,7 @@ namespace viz{
             void allocateInstances(std::uint16_t instances);
             void setInstances(std::uint16_t instances, const std::vector<glm::mat4>& transforms, const std::vector<glm::vec4>& colors);
             void setInstanceTransforms(const std::vector<glm::mat4>& transforms);
-            void setInstanceColor(const std::vector<glm::vec4>& colors);
+            void setInstanceColors(const std::vector<glm::vec4>& colors);
 
             void flagInstanceRendering() { m_isInstancedRendered = true; }
             void unflagInstanceRendereng() { m_isInstancedRendered = false; }
