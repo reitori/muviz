@@ -53,9 +53,9 @@ class VisualizerCli {
 
         // Config passing
         void listFEs();
-        const json& getConfig(int fe_id);
-        const json& getConfig(std::string fe_id);
-        const json& getMasterConfig() {return config;}
+        const json& getConfig(int fe_id) const;
+        const json& getConfig(std::string fe_id) const;
+        const json& getMasterConfig() const {return config;}
 
         std::unique_ptr<EventData> getRawData(int fe_id);
         std::unique_ptr<EventData> getRawData(std::string fe_id);
@@ -72,7 +72,7 @@ class VisualizerCli {
         // # events
         // getSingleBatch();
 
-        size_t getSize() {return dataLoaders.size();}
+        size_t getSize() const {return dataLoaders.size();}
 
     private:
         int parseOptions(int argc, char *argv[]);

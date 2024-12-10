@@ -12,13 +12,10 @@
 
 #include "Window/glWindow.h"
 
+#include "cli.h"
+
 namespace viz{
     class Application{
-        private:
-            static bool coreInit; //At some point maybe change this to bit flags indicating which API's are initialized ex: 011 logger init true, glfw init true, glad init true
-            static void GLFWErrorCallback(int err, const char* message){ logger->error("GLFW Code {0}: {1}", err, message); }
-            glWindow* appWin; //TODO: Change this to a list of windows. mainWin is a window that is rendered last
-
         public:
             Application(); //Sets application to fullscreen upon initialization
             Application(int width, int height); //Specify dimensions
@@ -26,7 +23,19 @@ namespace viz{
             static inline bool isInit() {return coreInit;}
             void run();
 
-            ~Application() = default;
+            ~Application();
+
+        private:
+            void cliInit();
+            void glfwInit(int width, int height);
+            void imGuiInit();
+            void dockspaceInit();
+
+            static bool coreInit = true; //At some point maybe change this to bit flags indicating which API's are initialized ex: 011 logger init true, glfw init true, glad init true
+            static void GLFWErrorCallback(int err, const char* message){ logger->error("GLFW Code {0}: {1}", err, message); } // Should be for the glfw window to handle
+
+            VisualizerCli m_cli;
+            glWindow* appWin; //TODO: Change this to a list of windows. mainWin is a window that is rendered last
     };
 }
 
