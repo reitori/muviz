@@ -96,54 +96,32 @@ namespace viz
             }
             
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-            ImGui::Begin("DockSpace", nullptr, window_flags);
+            ImGui::Begin("MainDock", nullptr, window_flags);
             ImGui::PopStyleVar();
             ImGui::PopStyleVar(2);
+            
+            ImGuiID dockspace_id = ImGui::GetID("MainDock");
+            ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
+            ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
+            ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_DockSpace);
+            ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
+
+            // split the dockspace into 2 nodes -- DockBuilderSplitNode takes in the following args in the following order
+            //   window ID to split, direction, fraction (between 0 and 1), the final two setting let's us choose which id we want (which ever one we DON'T set as NULL, will be returned by the function)
+            //                                                              out_id_at_dir is the id of the node in the direction we specified earlier, out_id_at_opposite_dir is in the opposite direction
+            ImGuiID dock_id_right, dock_id_down;
+                        
+            ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, 0.2f, &dock_id_right, &dockspace_id);
+            ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Down, 0.25f, &dock_id_down, &dockspace_id);
+
+                        // we now dock our windows into the docking node we made above
+            ImGui::DockBuilderDockWindow("Manager", dock_id_right);
+            ImGui::DockBuilderDockWindow("Console", dock_id_down);
+            ImGui::DockBuilderDockWindow("Scene", dockspace_id);
+            ImGui::DockBuilderFinish(dockspace_id);
         }
     }
 
-    void Application::dockspaceInit(){
-        if(coreInit){
-            ImGui_ImplOpenGL3_NewFrame();
-            ImGui_ImplGlfw_NewFrame();
-            ImGui::NewFrame();
-
-
-            const ImGuiViewport* viewport = ImGui::GetMainViewport();
-
-            ImGuiIO& io = ImGui::GetIO();
-            if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-            {
-                ImGuiID dockspace_id = ImGui::GetID("OnInitDock");
-                ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
-
-
-                {
-                    ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
-                    ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_DockSpace);
-                    ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
-
-                    // split the dockspace into 2 nodes -- DockBuilderSplitNode takes in the following args in the following order
-                    //   window ID to split, direction, fraction (between 0 and 1), the final two setting let's us choose which id we want (which ever one we DON'T set as NULL, will be returned by the function)
-                    //                                                              out_id_at_dir is the id of the node in the direction we specified earlier, out_id_at_opposite_dir is in the opposite direction
-                    ImGuiID dock_id_right, dock_id_down;
-                    
-                    ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, 0.2f, &dock_id_right, &dockspace_id);
-                    ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Down, 0.25f, &dock_id_down, &dockspace_id);
-
-                    // we now dock our windows into the docking node we made above
-                    ImGui::DockBuilderDockWindow("Manager", dock_id_right);
-                    ImGui::DockBuilderDockWindow("Console", dock_id_down);
-                    ImGui::DockBuilderDockWindow("Scene", dockspace_id);
-                    ImGui::DockBuilderFinish(dockspace_id);
-                }
-            }
-
-
-            ImGui::Render();
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        }
-    }
 
     Application::~Application(){
         delete glWindow;

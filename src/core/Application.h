@@ -6,6 +6,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "imgui_internal.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -29,7 +30,6 @@ namespace viz{
             void cliInit();
             void glfwInit(int width, int height);
             void imGuiInit();
-            void dockspaceInit();
 
             static bool coreInit = true; //At some point maybe change this to bit flags indicating which API's are initialized ex: 011 logger init true, glfw init true, glad init true
             static void GLFWErrorCallback(int err, const char* message){ logger->error("GLFW Code {0}: {1}", err, message); } // Should be for the glfw window to handle
