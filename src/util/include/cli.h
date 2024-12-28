@@ -53,9 +53,9 @@ class VisualizerCli {
 
         // Config passing
         void listFEs();
-        const json& getConfig(int fe_id) const;
-        const json& getConfig(std::string fe_id) const;
-        const json& getMasterConfig() const {return config;}
+        const json& getConfig(int fe_id);
+        const json& getConfig(std::string fe_id);
+        const json& getMasterConfig() {return config;}
 
         std::unique_ptr<EventData> getRawData(int fe_id);
         std::unique_ptr<EventData> getRawData(std::string fe_id);
