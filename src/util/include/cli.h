@@ -53,15 +53,15 @@ class VisualizerCli {
 
         // Config passing
         void listFEs();
-        const json& getConfig(int fe_id);
-        const json& getConfig(std::string fe_id);
+        const json& getConfig(int fe_id) const;
+        const json& getConfig(std::string fe_id) const;
         const json& getMasterConfig() {return config;}
 
-        std::unique_ptr<EventData> getRawData(int fe_id);
-        std::unique_ptr<EventData> getRawData(std::string fe_id);
+        std::unique_ptr<EventData> getRawData(int fe_id) const;
+        std::unique_ptr<EventData> getRawData(std::string fe_id) const;
 
-        std::unique_ptr<std::vector<pixelHit>> getData(int fe_id, bool get_all=false);
-        std::unique_ptr<std::vector<pixelHit>> getData(std::string fe_id, bool get_all=false);
+        std::unique_ptr<std::vector<pixelHit>> getData(int fe_id, bool get_all=false) const;
+        std::unique_ptr<std::vector<pixelHit>> getData(std::string fe_id, bool get_all=false) const;
 
         // std::vector<std::vector<int>> getProcessedData(int fe_id); // row, column for all hits in the EventData object
         // row col
