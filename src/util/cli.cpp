@@ -216,7 +216,7 @@ void VisualizerCli::listFEs() {
     }
 }
 
-const json& VisualizerCli::getConfig(int fe_id){
+const json& VisualizerCli::getConfig(int fe_id) const{
     if(!(fe_id >= 0 && fe_id < clipboards.size())) {
         logger->error("No frontend with index {} found in list! Returned config is empty", fe_id);
         throw std::invalid_argument("Invalid frontend config requested!");
@@ -224,12 +224,12 @@ const json& VisualizerCli::getConfig(int fe_id){
     return config["sources"][configIdMap[fe_id]];
 }
 
-const json& VisualizerCli::getConfig(std::string fe_id){
+const json& VisualizerCli::getConfig(std::string fe_id) const{
     if(feIdMap.find(fe_id) == feIdMap.end()) {
         logger->error("No frontend with name {} found in list! Returned config is empty", fe_id);
         throw std::invalid_argument("Invalid frontend config requested!");
     }
-    return config["sources"][configIdMap[feIdMap[fe_id]]];
+    return config["sources"][configIdMap[feIdMap.at(fe_id)]];
 }
 
 std::unique_ptr<EventData> VisualizerCli::getRawData(int fe_id){
