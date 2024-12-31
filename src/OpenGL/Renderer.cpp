@@ -1,37 +1,27 @@
 #include "OpenGL/Renderer.h"
 
 namespace viz{
-    // const char* vertexShaderSource="#version 330 core\n"
-    //     "layout (location = 0) in vec3 aPos;\n"
-    //     "layout (location = 1) in vec4 aFrag;\n"
+    const char* vertexShaderSource="#version 330 core\n"
+        "layout (location = 0) in vec3 aPos;\n"
+        "layout (location = 1) in vec4 aFrag;\n"
 
-    //     "layout (location = 2) in aInstanceFrag;\n"
-    //     "layout (location = 3) in mat4 aInstanceModel;\n"
+        "layout (location = 2) in aInstanceFrag;\n"
+        "layout (location = 3) in mat4 aInstanceModel;\n"
 
-    //     "uniform mat4 uModel;\n"
-    //     "uniform mat4 uView;\n"
-    //     "uniform mat4 uProj;\n"
+        "uniform mat4 uModel;\n"
+        "uniform mat4 uView;\n"
+        "uniform mat4 uProj;\n"
 
-    //     "uniform bool uIsInstanced;\n"
+        "uniform bool uIsInstanced;\n"
         
-    //     "out vec4 fragOut;\n"
+        "out vec4 fragOut;\n"
 
-    //     "void main()\n"
-    //     "{\n"
-    //     "   mat4 modelTransform = uIsInstanced ? aInstanceModel : uModel;\n"
-    //     "   gl_Position = proj * view * modelTransform * vec4(aPos, 1.0);\n"
-    //     "   fragOut = usIsInstanced ? mix(aFrag, aInstanceFrag, 0.5) : aFrag;\n"
-    //     "}\0";
-
-    const char* vertexShaderSource = R"(
-        #version 330 core
-        layout (location = 0) in vec3 aPos;
-
-        void main()
-        {
-            gl_Position = vec4(aPos, 1.0);
-        }
-    )";
+        "void main()\n"
+        "{\n"
+        "   mat4 modelTransform = uIsInstanced ? aInstanceModel : uModel;\n"
+        "   gl_Position = proj * view * modelTransform * vec4(aPos, 1.0);\n"
+        "   fragOut = usIsInstanced ? mix(aFrag, aInstanceFrag, 0.5) : aFrag;\n"
+        "}\0";
 
     const char* fragmentShaderSource="#version 330 core\n"
         "in vec4 fragOut;\n"

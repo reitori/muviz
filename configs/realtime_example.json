@@ -15,7 +15,7 @@
             "name": "test_chip1",
             "position": [0, 0, 0],
             "angle": [0, 0, 0],
-            "size": [20, 20],
+            "size": [1, 20],
             "rowcol": [100, 100],
             "enable": 1
         },

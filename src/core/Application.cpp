@@ -4,63 +4,6 @@ std::shared_ptr<spdlog::logger> viz::m_appLogger = logging::make_log("Visualizer
 
 namespace viz
 {
-    const char* vertTest="#version 330 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
-
-    "uniform mat4 model;"
-    "uniform mat4 view;"
-    "uniform mat4 proj;"
-
-    "void main()\n"
-    "{\n"
-    "   gl_Position = proj * view * model * vec4(aPos, 1.0);\n"
-    "}\0";
-
-const char* fragTest="#version 330 core\n"
-    "out vec4 FragColor;\n"
-
-    "void main()\n"
-    "{\n"
-    "    FragColor = vec4(0.3921f, 0.3921f, 0.3921f, 1.0f);\n"
-    "}\0";
-
- GLfloat cube_vertices[] = {
-        // front
-        -1.0, -1.0,  1.0,
-         1.0, -1.0,  1.0,
-         1.0,  1.0,  1.0,
-        -1.0,  1.0,  1.0,
-        // back
-        -1.0, -1.0, -1.0,
-         1.0, -1.0, -1.0,
-         1.0,  1.0, -1.0,
-        -1.0,  1.0, -1.0
- };
-
-GLuint cube_elements[] = {
-        // front
-        0, 1, 2,
-        2, 3, 0,
-        // right
-        1, 5, 6,
-        6, 2, 1,
-        // back
-        7, 6, 5,
-        5, 4, 7,
-        // left
-        4, 0, 3,
-        3, 7, 4,
-        // bottom
-        4, 5, 1,
-        1, 0, 4,
-        // top
-        3, 2, 6,
-        6, 7, 3
-    };
-
-    unsigned int VAO, VBO, EBO;
-    viz::Shader* testShader;
-
     Application::Application(int argc, char** argv){
         coreInit = true;
         cliInit(argc, argv);
@@ -106,29 +49,6 @@ GLuint cube_elements[] = {
             float lastTime = 0.0f;
             float currTime;
 
-            m_renderer->m_framebuffer->bind();
-            glGenVertexArrays(1, &VAO);
-            glBindVertexArray(VAO);
-
-            glGenBuffers(1, &VBO);
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), cube_vertices, GL_STATIC_DRAW);
-
-            glGenBuffers(1, &EBO);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_elements), cube_elements, GL_STATIC_DRAW);
-
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GL_FLOAT), (void*)0);
-            glEnableVertexAttribArray(0);
-            
-            glBindVertexArray(0);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-            
-            //Initializer Shaders
-            testShader = new viz::Shader(false, "test", vertTest, fragTest);
-            m_renderer->m_framebuffer->unbind();
-
             while(true){
                 currTime = glfwGetTime();
                 m_appLogger->info("FPS: {0}", (1.0f/(currTime - lastTime)));
@@ -148,26 +68,6 @@ GLuint cube_elements[] = {
                 const ManagerWindow* manager = dynamic_cast<ManagerWindow*>(m_GUIWindows[3].get());
                 m_renderer->m_Cameras["Main"].setPos(glm::vec3(manager->x, manager->y, manager->z));
                 m_renderer->setColor(glm::vec4(manager->color[0], manager->color[1], manager->color[2], manager->color[3]));
-
-
-                m_renderer->m_framebuffer->bind();
-                testShader->use();
-                glm::mat4 model = glm::mat4(1.0f);
-                glm::mat4 view  = glm::mat4(1.0f);
-
-                model = glm::rotate(model, float(glfwGetTime()), glm::vec3(0.5f, 1.0f, 0.0f));
-                view = glm::translate(view, glm::vec3( 0.0f, 0.0f, -10.0f));
-
-                testShader->setMat4("model", model);
-                testShader->setMat4("view", view);
-
-                glBindVertexArray(VAO);
-                glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-                glBindVertexArray(0);
-                glUseProgram(0);    
-                m_renderer->m_framebuffer->unbind();
-
-
 
                 m_renderer->render();
                 m_appWin->render();
