@@ -28,7 +28,6 @@ namespace viz{
         NORMAL
     };
 
-
     class SimpleMesh{
         public:
             SimpleMesh() = default;
@@ -40,16 +39,15 @@ namespace viz{
             void setInstanceTransforms(const std::vector<glm::mat4>& transforms);
             void setInstanceColors(const std::vector<glm::vec4>& colors);
 
-            void flagInstanceRendering() { m_isInstancedRendered = true; }
-            void unflagInstanceRendereng() { m_isInstancedRendered = false; }
+            void setInstancedRendering(bool isInstancedRendered) { m_isInstancedRendered = isInstancedRendered; }
 
-            void render(const Shader& shader);
+            void render(const Shader& shader) const;
         private:
             void init();
             bool m_isInit = false;
 
             bool m_isInstancedRendered;
-            std::uint16_t m_numInstances;
+            std::uint16_t m_numInstances = 0;
 
             std::vector<SimpleVertex> m_vertices;
             std::vector<GLuint> m_indices;

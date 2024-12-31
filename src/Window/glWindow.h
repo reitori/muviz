@@ -2,8 +2,9 @@
 #define GLWINDOW_H
 
 #include "core/header.h"
-#include "Window/window.h"
+#include "Window/Window.h"
 
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 namespace viz{
@@ -15,22 +16,27 @@ namespace viz{
 
 
     class glWindow : public Window{
-        private:
-            friend class Application; //Application should be able to access m_window
-            GLFWwindow* m_window;
-            void windowSizeCallback(int width, int height);
-            //void windowMaximizeCallback(GLFWwindow* window, int maximized); Not necessary now but could be later
-
         public:
             glWindow() = delete;
-            glWindow(std::uint16_t width, std::uint16_t height, const char* name);
-
+            glWindow(const char* name, std::uint16_t width, std::uint16_t height);
+            
             void render() override;
 
             inline const GLFWwindow* getGLFWWindow() const { return m_window; }
             inline void setAsContext() {glfwMakeContextCurrent(m_window);}
+            inline void swapBuffers() {glfwSwapBuffers(m_window);}
             virtual ~glWindow();
+
+        private:
+            friend class Application; //Application should be able to access m_window
+            GLFWwindow* m_window;
+            
+            std::uint16_t m_width;
+            std::uint16_t m_height; 
+
+            void windowSizeCallback(int width, int height);
+            //void windowMaximizeCallback(GLFWwindow* window, int maximized); Not necessary now but could be later
     };
 }
 
-#endif GLWINDOW_H
+#endif

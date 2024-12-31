@@ -12,57 +12,12 @@
 #include "cli.h"
 
 namespace viz{
-
-    std::vector<SimpleVertex> ChipVertices = {
-        // Front Vertices //Color
-        {glm::vec3(-1.0f, -1.0f,  1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 1.0f)},
-        {glm::vec3(1.0f, -1.0f,  1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 1.0f)},
-        {glm::vec3(1.0f,  1.0f,  1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 1.0f)},
-        {glm::vec3(-1.0f,  1.0f,  1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 1.0f)},
-        // Back Vertices  //Color
-        {glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 1.0f)},
-        {glm::vec3(1.0f, -1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 1.0f)},
-        {glm::vec3(1.0f,  1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 1.0f)},
-        {glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 1.0f)}
-    };
-
-    std::vector<SimpleVertex> HitVertices = {
-        // Front Vertices //Color
-        {glm::vec3(-1.0f, -1.0f,  1.0f), glm::vec4(1.0f, 0.2509f, 0.0235f, 0.95f)},
-        {glm::vec3(1.0f, -1.0f,  1.0f), glm::vec4(1.0f, 0.2509f, 0.0235f, 0.95f)},
-        {glm::vec3(1.0f,  1.0f,  1.0f), glm::vec4(1.0f, 0.2509f, 0.0235f, 0.95f)},
-        {glm::vec3(-1.0f,  1.0f,  1.0f), glm::vec4(1.0f, 0.2509f, 0.0235f, 0.95f)},
-        // Back Vertices  //Color
-        {glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec4(1.0f, 0.2509f, 0.0235f, 0.95f)},
-        {glm::vec3(1.0f, -1.0f, -1.0f), glm::vec4(1.0f, 0.2509f, 0.0235f, 0.95f)},
-        {glm::vec3(1.0f,  1.0f, -1.0f), glm::vec4(1.0f, 0.2509f, 0.0235f, 0.95f)},
-        {glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec4(1.0f, 0.2509f, 0.0235f, 0.95f)}
-    };
-
-    std::vector<GLuint> CubeIndices = {// front
-        0, 1, 2,
-        2, 3, 0,
-        // right
-        1, 5, 6,
-        6, 2, 1,
-        // back
-        7, 6, 5,
-        5, 4, 7,
-        // left
-        4, 0, 3,
-        3, 7, 4,
-        // bottom
-        4, 5, 1,
-        1, 0, 4,
-        // top
-        3, 2, 6,
-        6, 7, 3
-    };
-
-    SimpleMesh ChipMesh(ChipVertices, CubeIndices, true);
-    SimpleMesh HitMesh(HitVertices, CubeIndices, true);
+    extern std::vector<SimpleVertex> ChipVertices;
+    extern std::vector<SimpleVertex> HitVertices;
+    extern std::vector<GLuint> CubeIndices;
 
     struct Chip{
+        std::string name;
         std::uint16_t fe_id, maxCols, maxRows;
         std::uint64_t hits;
 
@@ -72,15 +27,17 @@ namespace viz{
 
     class Detector{
         public:
+            Detector();
+
             void init(const VisualizerCli& cli);
 
-            void update(VisualizerCli& cli);
-            void renderChips(const Shader& shader);
-            void renderHits(const Shader& shader);
+            void update();
+            void render(const Shader& shader) const;
 
             uint32_t totHits();
         private:
             glm::mat4 transform(glm::vec3 scale, glm::vec3 eulerRot, glm::vec3 pos, bool isInRadians = false);
+            const VisualizerCli* m_cli;
 
             GLuint m_instBufID; 
             std::uint32_t m_size = 0; //per frame basis
@@ -92,6 +49,8 @@ namespace viz{
             std::vector<glm::vec4> m_chipColors, m_hitColors;
 
             glm::vec3 hitScale = glm::vec3(0.05f, 0.05f, 0.05f);
+
+            SimpleMesh ChipMesh, HitMesh;
     };
 }
 

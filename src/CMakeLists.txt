@@ -34,6 +34,31 @@ set_target_properties(test
     RUNTIME_OUTPUT_DIRECTORY "${TARGET_INSTALL_AREA}/bin"
 )
 
+add_executable(main 
+    core/main.cpp
+    core/Application.cpp
+    Window/glWindow.cpp
+    Window/GUIWindows.cpp
+    Window/Window.cpp
+    OpenGL/Scene/Detector.cpp
+    OpenGL/Scene/Mesh.cpp
+    OpenGL/Camera.cpp
+    OpenGL/Framebuffer.cpp
+    OpenGL/Renderer.cpp
+    OpenGL/Shader.cpp
+)
+
+target_include_directories(main PUBLIC ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(main VisualizerLib pthread rt glfw glad imgui glm)
+
+set_target_properties(main 
+    PROPERTIES 
+    LINKER_LANGUAGE CXX
+    # ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    # LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    RUNTIME_OUTPUT_DIRECTORY "${TARGET_INSTALL_AREA}/bin"
+)
+
 add_executable(datatest
     core/datareader_test.cpp
 )

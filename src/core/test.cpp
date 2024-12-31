@@ -160,7 +160,7 @@ int main(int argc, char** argv) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
     //Initializer Shaders
-    testShader = new viz::Shader(false, vertexShaderSource, fragmentShaderSource);
+    testShader = new viz::Shader(false, "test", vertexShaderSource, fragmentShaderSource);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     while(!glfwWindowShouldClose(window)){
@@ -338,7 +338,7 @@ void frame(GLFWwindow* window){
         ImGui::Begin("Right");
         ImGui::Text("Hello World");
         if(ImGui::ColorPicker4("Change Screen", color)){
-            glClearColor(color[0], color[1], color[2], color[3]);
+            //glClearColor(color[0], color[1], color[2], color[3]);
         }
         ImGui::End();
     }
