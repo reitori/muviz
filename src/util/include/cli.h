@@ -20,7 +20,7 @@
 #include "DataBase.h"
 
 namespace cli_helpers {
-    auto logger = logging::make_log("VizCLI");
+    extern std::shared_ptr<spdlog::logger> logger;
     
     struct ScanOpts {
         // std::string loggingPattern = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";

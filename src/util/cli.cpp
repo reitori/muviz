@@ -2,6 +2,8 @@
 
 namespace cli_helpers {
 
+    std::shared_ptr<spdlog::logger> logger = logging::make_log("VizCLI");
+
     void setupLoggers(bool verbose) {
         json loggerConfig;
         loggerConfig["pattern"] = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";

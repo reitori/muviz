@@ -159,7 +159,7 @@ namespace viz{
         glBindVertexArray(0);
     }
     
-    void SimpleMesh::render(const Shader& shader){
+    void SimpleMesh::render(const Shader& shader) const {
         shader.use();
         glBindVertexArray(m_VAO);
         if(!m_isInstancedRendered){
@@ -167,7 +167,8 @@ namespace viz{
             glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, 0);
         }else{
             shader.setBool("uIsInstanced", true);
-            glDrawElementsInstanced(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, 0, m_numInstances);
+            glDrawElementsInstanced(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, (GLvoid*)0, m_numInstances);
+            m_appLogger->info("Size of instances: {0}", m_numInstances);
         }
         glBindVertexArray(0);
         return;

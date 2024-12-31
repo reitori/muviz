@@ -21,6 +21,7 @@ namespace viz{
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
+        glEnable(GL_DEPTH);
 
         m_width = width;
         m_height = height;
@@ -51,6 +52,7 @@ namespace viz{
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glBindTexture(GL_TEXTURE_2D, 0);
             glBindRenderbuffer(GL_RENDERBUFFER, 0);
+            glEnable(GL_DEPTH);
 
             m_width = width;
             m_height = height;

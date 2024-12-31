@@ -12,30 +12,37 @@
 #include <GLFW/glfw3.h>
 
 #include "Window/glWindow.h"
+#include "Window/GUIWindows.h"
 
 #include "cli.h"
 
 namespace viz{
     class Application{
         public:
-            Application(); //Sets application to fullscreen upon initialization
-            Application(int width, int height); //Specify dimensions
+            Application(int argc, char** argv); //Sets application to fullscreen upon initialization
 
-            static inline bool isInit() {return coreInit;}
+            Application(int argc, char** argv, int width, int height); //Specify dimensions
+
+            inline bool isInit() {return coreInit;}
             void run();
 
             ~Application();
 
         private:
-            void cliInit();
-            void glfwInit(int width, int height);
+            void cliInit(int& argc, char**& argv);
+            void glInit(bool fullscreen, int width = 100, int height = 100);
             void imGuiInit();
 
-            static bool coreInit = true; //At some point maybe change this to bit flags indicating which API's are initialized ex: 011 logger init true, glfw init true, glad init true
-            static void GLFWErrorCallback(int err, const char* message){ logger->error("GLFW Code {0}: {1}", err, message); } // Should be for the glfw window to handle
+            void init();
+
+            bool coreInit; //At some point maybe change this to bit flags indicating which API's are initialized ex: 011 logger init true, glfw init true, glad init true
+            static void GLFWErrorCallback(int err, const char* message){ m_appLogger->error("GLFW Code {0}: {1}", err, message); } // Should be for the glfw window to handle
 
             VisualizerCli m_cli;
-            glWindow* appWin; //TODO: Change this to a list of windows. mainWin is a window that is rendered last
+            std::unique_ptr<glWindow> m_appWin;
+            std::shared_ptr<Detector> m_detector;
+            std::shared_ptr<Renderer> m_renderer;
+            std::vector<std::unique_ptr<GUIWindow>> m_GUIWindows;      
     };
 }
 

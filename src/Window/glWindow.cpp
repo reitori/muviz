@@ -6,7 +6,7 @@ namespace viz{
         m_height = (std::uint16_t)height;
     }
 
-    glWindow::glWindow(std::uint16_t width, std::uint16_t height, const char* name) : Window(width, height){
+    glWindow::glWindow(const char* name, std::uint16_t width, std::uint16_t height) : Window(name), m_width(width), m_height(height){
         //TODO: Check initialization status the Application flags
         m_window = glfwCreateWindow(width, height, name, NULL, NULL);
         if(m_window == NULL){
@@ -14,8 +14,8 @@ namespace viz{
             glfwDestroyWindow(m_window);
         }
         else{
-            GLFWwindow* currWin = glfwGetCurrentContext();
             glfwMakeContextCurrent(m_window);
+            glfwSwapInterval(1);
 
             //Workaround to make glfw callbacks methods of specific objects rather than global functions
             glfwSetWindowUserPointer(m_window, this);
@@ -23,8 +23,6 @@ namespace viz{
                 static_cast<glWindow*>(glfwGetWindowUserPointer(window))->windowSizeCallback(callwidth, callheight);
             };
             glfwSetWindowSizeCallback(m_window, lambsizecallback);
-
-            glfwMakeContextCurrent(currWin);
         }
     }
 
@@ -33,7 +31,7 @@ namespace viz{
 
         glfwPollEvents();
         glfwSwapBuffers(m_window);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
     }
 
 

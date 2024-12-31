@@ -14,7 +14,7 @@ namespace viz{
     class Shader{
         public:
             Shader() = delete;
-            Shader(bool compileFromFile, const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr);
+            Shader(bool compileFromFile, const char* name, const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr);
 
             inline void use() const {glUseProgram(m_id);}
 
