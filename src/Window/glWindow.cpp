@@ -27,10 +27,10 @@ namespace viz{
     }
 
     void glWindow::render(){
-        glfwMakeContextCurrent(m_window);
 
         glfwPollEvents();
         glfwSwapBuffers(m_window);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
     }
 
