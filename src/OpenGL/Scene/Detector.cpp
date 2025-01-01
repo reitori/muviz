@@ -27,7 +27,8 @@ namespace viz{
         {glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec4(1.0f, 0.2509f, 0.0235f, 0.95f)}
     };
 
-    std::vector<GLuint> CubeIndices = {// front
+    std::vector<GLuint> CubeIndices = {
+        // front
         0, 1, 2,
         2, 3, 0,
         // right
@@ -57,7 +58,6 @@ namespace viz{
         m_cli = &cli;
 
         for(int i = 0; i < cli.getSize(); i++) {
-            m_appLogger->info("num of chips {0}", cli.getSize());
             const json& config = cli.getConfig(i);
             std::string name = config["name"].get<std::string>();
             std::vector<float> pos = config["position"].get<std::vector<float>>();
@@ -115,7 +115,6 @@ namespace viz{
         }
 
         ChipMesh.setInstances(i, m_hitTransforms, m_hitColors);
-        m_appLogger->info("Number of hits {0}", m_nfe);
     }
 
     void Detector::render(const Shader& shader) const{

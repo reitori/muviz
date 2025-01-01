@@ -51,7 +51,8 @@ namespace viz
 
             while(true){
                 currTime = glfwGetTime();
-                m_appLogger->info("FPS: {0}", (1.0f/(currTime - lastTime)));
+                ConsoleWindow* console = dynamic_cast<ConsoleWindow*>(m_GUIWindows[2].get());
+                console->fps = 1.0f/(currTime - lastTime);
                 lastTime = currTime;
 
                 ImGui_ImplOpenGL3_NewFrame();

@@ -43,6 +43,8 @@ namespace viz{
 
             glm::vec4 m_color;
             std::uint8_t m_activeShaderNum;
+
+            SimpleMesh testCube;
     };
 }
 
