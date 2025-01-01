@@ -81,6 +81,8 @@ namespace viz{
 
     class ConsoleWindow : public GUIWindow{
         public:
+            float fps = 0.0f;
+
             ConsoleWindow() = default;
             ConsoleWindow(const char* name) : GUIWindow(name) {}
 
@@ -88,7 +90,7 @@ namespace viz{
 
             virtual ~ConsoleWindow() = default;
         private:
-            void onRender() override {}
+            void onRender() override;
             void preFrame() override {}
     };
 }

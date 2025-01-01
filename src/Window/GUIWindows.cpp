@@ -84,4 +84,8 @@ namespace viz
         ImGui::SliderFloat("z", &z, -50.0f, 50.0f);
         ImGui::ColorPicker4("Change Screen", color);
     }
+
+    void ConsoleWindow::onRender(){
+        ImGui::Text("FPS: %.1f", fps);
+    }
 }
