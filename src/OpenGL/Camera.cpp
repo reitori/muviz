@@ -10,7 +10,7 @@ namespace viz{
     }
 
     void Camera::resize(int width, int height){
-        data.projection = glm::perspective(glm::radians(data.zoom * 45.0f), ((float)width * data.screenScale.x) / ((float)height * data.screenScale.y), 0.1f, 100.0f); 
+        data.projection = glm::perspective(glm::radians(data.zoom * 45.0f), ((float)width * data.screenScale.x) / ((float)height * data.screenScale.y), 0.5f, 500.0f); 
     }
 
     glm::mat4 Camera::getView() const{
