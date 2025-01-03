@@ -114,7 +114,7 @@ namespace viz{
             }
         }
 
-        ChipMesh.setInstances(i, m_hitTransforms, m_hitColors);
+        HitMesh.setInstances(i, m_hitTransforms, m_hitColors);
     }
 
     void Detector::render(const Shader& shader) const{
@@ -129,10 +129,7 @@ namespace viz{
         if(!isInRadians)
             eulerRot = glm::vec3(viz_TO_RADIANS(eulerRot[0]), viz_TO_RADIANS(eulerRot[1]), viz_TO_RADIANS(eulerRot[2]));
 
-        tempTfm = glm::rotate(tempTfm, eulerRot[0], glm::vec3(0.0f, 0.0f, 1.0f));
-        tempTfm = glm::rotate(tempTfm, eulerRot[1], glm::vec3(0.0f, 1.0f, 0.0f));
-        tempTfm = glm::rotate(tempTfm, eulerRot[2], glm::vec3(1.0f, 0.0f, 0.0f));
-
+        tempTfm = glm::toMat4(glm::quat(eulerRot)) * tempTfm;
         tempTfm = glm::translate(tempTfm, pos);
         return tempTfm;
     }
