@@ -81,7 +81,8 @@ namespace viz
     void ManagerWindow::onRender(){
         ImGui::SliderFloat("x", &x, -50.0f, 50.0f);
         ImGui::SliderFloat("y", &y, -50.0f, 50.0f);
-        ImGui::SliderFloat("z", &z, -50.0f, 50.0f);
+        ImGui::SliderFloat("z", &z, -100.0f, 100.0f);
+        ImGui::SliderFloat("Worldrotate", &worldRot, 0.0f, 360.0f);
         ImGui::ColorPicker4("Change Screen", color);
     }
 

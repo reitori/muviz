@@ -67,6 +67,7 @@ namespace viz{
         public:
             float x = 0, y = 0, z = 0;
             float color[4] = {0, 0, 0, 1};
+            float worldRot = 0.0f;
 
             ManagerWindow() = default;
             ManagerWindow(const char* name) : GUIWindow(name) {}
