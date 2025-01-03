@@ -19,12 +19,16 @@ namespace viz{
     class Camera{
         public:
             CamData data;
+            bool cameraLocked = false;
 
             Camera();
             Camera(CamData cameraData) : data(cameraData) {}
 
             void resize(int width, int height);
-            void setPos(glm::vec3 pos) { data.position = pos; }
+            void setPos(glm::vec3 pos);
+
+            void displace(glm::vec3 disp);
+            void rotate(glm::vec3 rot);
 
             glm::mat4 getView() const;
     };
