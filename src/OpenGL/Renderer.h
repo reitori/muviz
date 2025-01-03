@@ -8,6 +8,8 @@
 #include "OpenGL/Camera.h"
 #include "OpenGL/Scene/Detector.h"
 
+#include "Events/Event.h"
+
 #include <glm/glm.hpp>
 
 namespace viz{
@@ -24,6 +26,7 @@ namespace viz{
             void attachDetector(std::shared_ptr<Detector> detetctor) { m_detector = detetctor; }
 
             void attachCamera(std::string name, const Camera& camera);
+            Camera* getCamera() {return &m_Cameras[m_currCam];}
             Camera* getCamera(std::string name);
             void destroyCamera(std::string name);
 
@@ -36,14 +39,16 @@ namespace viz{
             friend class Application;
             std::shared_ptr<Detector> m_detector;
             std::unique_ptr<Framebuffer> m_framebuffer;
+
+            std::uint8_t m_activeShaderNum;
             std::vector<Shader> m_Shaders;
 
             std::string m_currCam;
             std::map<std::string, Camera> m_Cameras;
 
             glm::vec4 m_color;
-            std::uint8_t m_activeShaderNum;
 
+            glm::vec2 lastCursorPos;
             std::unique_ptr<SimpleMesh> testCube;
     };
 }
