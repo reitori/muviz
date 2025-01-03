@@ -4,7 +4,6 @@
 #include "core/header.h"
 #include "OpenGL/Shader.h"
 #include <glm/glm.hpp>
-
 //TODO: Abstract away SimpleMesh and NormalMesh to general Mesh class.
 //      
 

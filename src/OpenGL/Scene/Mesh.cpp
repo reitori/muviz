@@ -82,7 +82,7 @@ namespace viz{
 
         glBindVertexArray(m_VAO);
         glBindBuffer(GL_ARRAY_BUFFER, m_colorsVBO);
-        glBufferData(GL_ARRAY_BUFFER, instances * sizeof(glm::vec4), &colors[0], GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, static_cast<GLuint>(instances * sizeof(glm::vec4)), &colors[0], GL_STATIC_DRAW);
 
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, vec4Size, (void*)0);
@@ -90,14 +90,13 @@ namespace viz{
         glVertexAttribDivisor(2, 1);
 
         glBindBuffer(GL_ARRAY_BUFFER, m_transformsVBO);
-        glBufferData(GL_ARRAY_BUFFER, instances * sizeof(glm::mat4), &transforms[0], GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, static_cast<GLuint>(instances * sizeof(glm::mat4)), transforms.data(), GL_STATIC_DRAW);
 
-        
         glEnableVertexAttribArray(3);
         glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
         glEnableVertexAttribArray(4);
         glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)vec4Size);
-        glEnableVertexAttribArray(5);
+        glEnableVertexAttribArray(5);   
         glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2*vec4Size));
         glEnableVertexAttribArray(6);
         glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3*vec4Size));
@@ -108,6 +107,7 @@ namespace viz{
         glVertexAttribDivisor(6, 1);
 
         glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
     void SimpleMesh::setInstanceTransforms(const std::vector<glm::mat4>& transforms){
@@ -164,10 +164,10 @@ namespace viz{
         glBindVertexArray(m_VAO);
         if(!m_isInstancedRendered){
             shader.setBool("uIsInstanced", false);
-            glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, (GLvoid*)0);
+            glDrawElements(GL_TRIANGLES, static_cast<GLuint>(m_indices.size()), GL_UNSIGNED_INT, (GLvoid*)0);
         }else{
             shader.setBool("uIsInstanced", true);
-            glDrawElementsInstanced(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, (GLvoid*)0, m_numInstances);
+            glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLuint>(m_indices.size()), GL_UNSIGNED_INT, (GLvoid*)0, m_numInstances);
         }
         glBindVertexArray(0);
         return;
