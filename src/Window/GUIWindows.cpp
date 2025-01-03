@@ -78,6 +78,21 @@ namespace viz
         }
     }
 
+    void SceneWindow::onEvent(const event& e){
+        Camera* cam = m_renderer->getCamera();
+        eventType type = e.getEventType();
+        switch (type)
+        {
+        case eventType::mouseButtonPress:
+            /* code */
+            break;
+        
+        default:
+            break;
+        }
+
+    }
+
     void ManagerWindow::onRender(){
         ImGui::SliderFloat("x", &x, -50.0f, 50.0f);
         ImGui::SliderFloat("y", &y, -50.0f, 50.0f);
@@ -88,5 +103,30 @@ namespace viz
 
     void ConsoleWindow::onRender(){
         ImGui::Text("FPS: %.1f", fps);
+
+        ImGui::Separator();
+        if (ImGui::BeginChild("Log", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), true)) {
+            for (const auto& line : lines) {
+                ImGui::TextUnformatted(line.c_str());
+            }
+            if (ScrollToBottom)
+                ImGui::SetScrollHereY(1.0f);
+            ScrollToBottom = false;
+        }
+        ImGui::EndChild();
+    }
+
+    void ConsoleWindow::AddLog(const char* fmt, ...) {
+        if(lines.size() > 1024){
+            lines.clear();
+        }
+
+        va_list args;
+        va_start(args, fmt);
+        char buf[1024];
+        vsnprintf(buf, IM_ARRAYSIZE(buf), fmt, args);
+        va_end(args);
+        lines.push_back(buf);
+        ScrollToBottom = true;
     }
 }
