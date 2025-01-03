@@ -14,6 +14,8 @@
 #include "Window/glWindow.h"
 #include "Window/GUIWindows.h"
 
+#include "Events/Event.h"
+
 #include "cli.h"
 
 namespace viz{
@@ -24,7 +26,9 @@ namespace viz{
             Application(int argc, char** argv, int width, int height); //Specify dimensions
 
             inline bool isInit() {return coreInit;}
+
             void run();
+            void onEvent(event& e);
 
             ~Application();
 

@@ -35,13 +35,14 @@ namespace viz
         m_GUIWindows.push_back(std::make_unique<SceneWindow>("Scene", m_renderer));
         m_GUIWindows.push_back(std::make_unique<ConsoleWindow>("Console"));
         m_GUIWindows.push_back(std::make_unique<ManagerWindow>("Manager"));
-
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         for(int i = 0; i < m_GUIWindows.size(); i++)
             m_GUIWindows[i]->init();
         ImGui::EndFrame();
+
+        m_appWin->setEventCallback(std::bind(&Application::onEvent, this, std::placeholders::_1));
     }
 
     void Application::run(){
@@ -74,6 +75,12 @@ namespace viz
                 m_appWin->render();
             }
         }
+    }
+
+    void Application::onEvent(event& e){
+        std::string str = e.toString();
+		ConsoleWindow* console = dynamic_cast<ConsoleWindow*>(m_GUIWindows[2].get());
+        console->AddLog(str.c_str());
     }
 
     void Application::cliInit(int& argc, char**& argv){
