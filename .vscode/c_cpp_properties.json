@@ -8,7 +8,8 @@
                 "${workspaceFolder}/deps/glad",
                 "${workspaceFolder}/deps/imgui/include",
                 "${workspaceFolder}/",
-                "${workspaceFolder}/build/_deps/glm-src"
+                "${workspaceFolder}/build/_deps/glm-src",
+                "${workspaceFolder}/deps/glad/include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

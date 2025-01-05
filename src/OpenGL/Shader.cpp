@@ -2,7 +2,9 @@
 
 namespace viz{
     //Clarify whether you are compiling from a string or from a file in compileFromFile
-    Shader::Shader(bool compileFromFile, const char* vertexPath, const char* fragmentPath, const char* geometryPath){
+    Shader::Shader(bool compileFromFile, const char* name, const char* vertexPath, const char* fragmentPath, const char* geometryPath){
+        m_name = name;
+        
         if(compileFromFile){
             std::string vertexCode;
             std::string fragmentCode;
