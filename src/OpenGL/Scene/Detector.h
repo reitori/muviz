@@ -35,6 +35,8 @@ namespace viz{
             void update();
             void render(const Shader& shader) const;
 
+            std::vector<Chip> getChips() { return m_chips;}
+
             uint32_t totHits();
         private:
             glm::mat4 transform(glm::vec3 scale, glm::vec3 eulerRot, glm::vec3 pos, bool isInRadians = false);

@@ -85,7 +85,6 @@ namespace viz
         {
         case eventType::mouseButtonPress: {
                 if(data->mouseButton == mouse::mouseCodes::ButtonRight)
-                    m_appLogger->info("right click");
                     m_mousePressed = true;
                 break;
             }
@@ -95,20 +94,26 @@ namespace viz
             }
         case eventType::mouseMove: {
                 ImVec2 mousePos = mouseRelToWin(ImVec2(data->floatPairedData.first, data->floatPairedData.second));
-                //m_appLogger->info("Mouse Relative: ({0}, {1}) || in win: {2} || win size: ({3}, {4})", mousePos.x, mousePos.y, mouseInWin(mousePos), m_currSize.x, m_currSize.y);
-
-                if(mouseInWin(mousePos) && m_mousePressed){
+                if(mouseInWin(mousePos)){
+                    m_mouseInWin = true;
+                    if(m_mousePressed){
                     Camera* cam = m_renderer->getCamera();
                     ImVec2 dir = ImVec2(mousePos.x - m_lastMouse.x, mousePos.y - m_lastMouse.y);
                     glm::vec3 disp = 0.0075f * (dir.x * cam->getRight() - dir.y * cam->getUp());
                     cam->displace(-disp);
+                    }
                 }  
+                else{
+                    m_mouseInWin = false;
+                }
                 m_lastMouse = mousePos;
                 break;
             }    
         case eventType::mouseScroll: {
-                Camera* cam = m_renderer->getCamera("Main");
-                cam->displace(-cam->getFront() * 0.75f * e.getData()->floatPairedData.second);
+                if(m_mouseInWin){
+                    Camera* cam = m_renderer->getCamera("Main");
+                    cam->displace(-cam->getFront() * 0.75f * e.getData()->floatPairedData.second);
+                }
                 break;
             }
         
@@ -125,8 +130,26 @@ namespace viz
         return false;
     }
 
+    ManagerWindow::ManagerWindow(const char* name, std::shared_ptr<Detector> detector) : GUIWindow(name){
+        m_detector = detector;
+    }
+
+    void ManagerWindow::attachDetector(std::shared_ptr<Detector> detector){
+        m_detector = detector;
+    }
+
     void ManagerWindow::onRender(){
         ImGui::ColorPicker4("Change Screen", color);
+
+
+        std::vector<Chip> chips = m_detector->getChips();
+        for(int i = 0; i < chips.size(); i++){
+            ImGui::Separator();
+            ImGui::Text("Name: %s", chips[i].name.c_str());
+            ImGui::Text("fe_id: %i", chips[i].fe_id);
+            ImGui::Text("Position: (%.2f, %.2f, %.2f)", chips[i].pos.x, chips[i].pos.y, chips[i].pos.z);
+            ImGui::Text("Hits: %lu", chips[i].hits);
+        }
     }
 
     void ConsoleWindow::onRender(){
