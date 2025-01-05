@@ -65,27 +65,52 @@ namespace viz
     void SceneWindow::onRender(){
         if(m_renderer){
             ImVec2 windim = ImGui::GetContentRegionAvail();
-            ImVec2 winpos = ImGui::GetWindowPos();
-            ImVec2 winsize = ImGui::GetWindowSize();
+            m_currPos = ImGui::GetWindowPos();
+            m_currSize = ImGui::GetWindowSize();
 
             glViewport(0, 0, windim.x, windim.y);
             if(windim.x != m_renderer->getWidth() || windim.y != m_renderer->getHeight()){
                 m_renderer->resize(windim.x, windim.y);
             }
 
-            ImVec2 topRight = ImVec2(winpos.x + winsize.x, winpos.y + winsize.y);
-            ImGui::GetWindowDrawList()->AddImage(m_renderer->getTexID(), winpos, topRight, ImVec2(0, 1), ImVec2(1, 0));
+            ImVec2 topRight = ImVec2(m_currPos.x + m_currSize.x, m_currPos.y + m_currSize.y);
+            ImGui::GetWindowDrawList()->AddImage(m_renderer->getTexID(), m_currPos, topRight, ImVec2(0, 1), ImVec2(1, 0));
         }
     }
 
     void SceneWindow::onEvent(const event& e){
-        Camera* cam = m_renderer->getCamera();
         eventType type = e.getEventType();
+        const EventData* data = e.getData();
         switch (type)
         {
-        case eventType::mouseButtonPress:
-            /* code */
-            break;
+        case eventType::mouseButtonPress: {
+                if(data->mouseButton == mouse::mouseCodes::ButtonRight)
+                    m_appLogger->info("right click");
+                    m_mousePressed = true;
+                break;
+            }
+        case eventType::mouseButtonRelease:{
+                m_mousePressed = false;
+                break;
+            }
+        case eventType::mouseMove: {
+                ImVec2 mousePos = mouseRelToWin(ImVec2(data->floatPairedData.first, data->floatPairedData.second));
+                //m_appLogger->info("Mouse Relative: ({0}, {1}) || in win: {2} || win size: ({3}, {4})", mousePos.x, mousePos.y, mouseInWin(mousePos), m_currSize.x, m_currSize.y);
+
+                if(mouseInWin(mousePos) && m_mousePressed){
+                    Camera* cam = m_renderer->getCamera();
+                    ImVec2 dir = ImVec2(mousePos.x - m_lastMouse.x, mousePos.y - m_lastMouse.y);
+                    glm::vec3 disp = 0.0075f * (dir.x * cam->getRight() - dir.y * cam->getUp());
+                    cam->displace(-disp);
+                }  
+                m_lastMouse = mousePos;
+                break;
+            }    
+        case eventType::mouseScroll: {
+                Camera* cam = m_renderer->getCamera("Main");
+                cam->displace(-cam->getFront() * 0.75f * e.getData()->floatPairedData.second);
+                break;
+            }
         
         default:
             break;
@@ -93,11 +118,14 @@ namespace viz
 
     }
 
+    bool SceneWindow::mouseInWin(ImVec2 mouseRelativeToWin){
+        if(mouseRelativeToWin.x < m_currSize.x && mouseRelativeToWin.x > 0.0f && mouseRelativeToWin.y < m_currSize.y && mouseRelativeToWin.y > 0.0f)
+            return true;
+
+        return false;
+    }
+
     void ManagerWindow::onRender(){
-        ImGui::SliderFloat("x", &x, -50.0f, 50.0f);
-        ImGui::SliderFloat("y", &y, -50.0f, 50.0f);
-        ImGui::SliderFloat("z", &z, -100.0f, 100.0f);
-        ImGui::SliderFloat("Worldrotate", &worldRot, 0.0f, 360.0f);
         ImGui::ColorPicker4("Change Screen", color);
     }
 

@@ -68,7 +68,6 @@ namespace viz
                 m_detector->update();
 
                 const ManagerWindow* manager = dynamic_cast<ManagerWindow*>(m_GUIWindows[3].get());
-                m_renderer->m_Cameras["Main"].setPos(glm::vec3(manager->x, manager->y, manager->z));
                 m_renderer->setColor(glm::vec4(manager->color[0], manager->color[1], manager->color[2], manager->color[3]));
 
                 m_renderer->render();
@@ -81,6 +80,10 @@ namespace viz
         std::string str = e.toString();
 		ConsoleWindow* console = dynamic_cast<ConsoleWindow*>(m_GUIWindows[2].get());
         console->AddLog(str.c_str());
+
+        for(int i = 0 ; i < m_GUIWindows.size(); i++){
+            m_GUIWindows[i]->onEvent(e);
+        }
     }
 
     void Application::cliInit(int& argc, char**& argv){

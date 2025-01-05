@@ -6,11 +6,13 @@ namespace viz{
         data.position = glm::vec3(0.0f, 0.0f, 0.0f);
         data.orientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
         data.screenScale = glm::vec2(1.0f, 1.0f);
+        data.screenSize = glm::vec2(1.0f, 1.0f);
         data.zoom = 1.0f;
     }
 
     void Camera::resize(int width, int height){
-        data.projection = glm::perspective(glm::radians(data.zoom * 45.0f), ((float)width * data.screenScale.x) / ((float)height * data.screenScale.y), 0.5f, 500.0f); 
+        data.screenSize.x = width; data.screenSize.y = height;
+        calcProj();
     }
 
     void Camera::setPos(glm::vec3 pos) { 
@@ -20,14 +22,21 @@ namespace viz{
     }
 
     void Camera::displace(glm::vec3 disp) {
-        if(cameraLocked) 
-            return;
+
         data.position += disp; 
+        m_appLogger->info("CameraDisplaced ({0},{1},{2})", data.position.x, data.position.y, data.position.z);
     }
     void Camera::rotate(glm::vec3 rot) { 
         if(cameraLocked)
             return;
         data.orientation = glm::quat(rot) * data.orientation; 
+    }
+
+    void Camera::addScroll(float scroll){
+        if(cameraLocked)
+            return;
+        data.screenScale += scroll;
+        calcProj();
     }
 
     glm::mat4 Camera::getView() const{

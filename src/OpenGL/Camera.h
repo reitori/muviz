@@ -13,6 +13,7 @@ namespace viz{
         glm::vec3 position;
         glm::quat orientation;
         glm::vec2 screenScale;
+        glm::vec2 screenSize;
         float zoom;
     };
 
@@ -29,8 +30,16 @@ namespace viz{
 
             void displace(glm::vec3 disp);
             void rotate(glm::vec3 rot);
+            void addScroll(float scroll);
+
+            glm::vec3 getFront() const { return glm::normalize(glm::mat4_cast(data.orientation) * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f));}
+            glm::vec3 getUp() const { return glm::normalize(glm::mat4_cast(data.orientation) * glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));}
+            glm::vec3 getRight() const { return glm::normalize(glm::mat4_cast(data.orientation) * glm::vec4(1.0f, 0.0f, 0.0f, 0.0f));}
 
             glm::mat4 getView() const;
+
+        private:
+            void calcProj() { data.projection = glm::perspective(glm::radians(data.zoom * 45.0f), ((float)data.screenSize.x * data.screenScale.x) / ((float)data.screenSize.y * data.screenScale.y), 0.5f, 500.0f);}
     };
 }
 

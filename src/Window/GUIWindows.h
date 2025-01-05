@@ -63,9 +63,14 @@ namespace viz{
             virtual ~SceneWindow() = default;
         private:
             std::shared_ptr<Renderer> m_renderer;
+            ImVec2 m_lastMouse, m_currMouse, m_currPos, m_currSize; //mouse positions are relative to window
+            bool m_mousePressed = false;
 
             void onRender() override;
             void preFrame() override {}
+
+            bool mouseInWin(ImVec2 mouseRelativeToWin);
+            inline ImVec2 mouseRelToWin(ImVec2 cursor) { return ImVec2(cursor.x - m_currPos.x, cursor.y - m_currPos.y);}
     };
 
     class ManagerWindow : public GUIWindow{
