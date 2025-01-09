@@ -3,7 +3,7 @@
 namespace viz{
     Camera::Camera(){
         data.projection = glm::mat4(1.0f);
-        data.position = glm::vec3(0.0f, 0.0f, 0.0f);
+        data.position = glm::vec3(0.0f, 0.0f, 1.0f);
         data.orientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
         data.screenScale = glm::vec2(1.0f, 1.0f);
         data.screenSize = glm::vec2(1.0f, 1.0f);
@@ -22,9 +22,10 @@ namespace viz{
     }
 
     void Camera::displace(glm::vec3 disp) {
+        if(cameraLocked)
+            return;
 
         data.position += disp; 
-        m_appLogger->info("CameraDisplaced ({0},{1},{2})", data.position.x, data.position.y, data.position.z);
     }
     void Camera::rotate(glm::vec3 rot) { 
         if(cameraLocked)

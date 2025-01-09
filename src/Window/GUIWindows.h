@@ -3,6 +3,7 @@
 
 #include "Window/Window.h"
 #include "OpenGL/Renderer.h"
+#include "OpenGL/Scene/Detector.h"
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -64,7 +65,7 @@ namespace viz{
         private:
             std::shared_ptr<Renderer> m_renderer;
             ImVec2 m_lastMouse, m_currMouse, m_currPos, m_currSize; //mouse positions are relative to window
-            bool m_mousePressed = false;
+            bool m_mousePressed = false, m_mouseInWin = false;
 
             void onRender() override;
             void preFrame() override {}
@@ -80,13 +81,18 @@ namespace viz{
             float worldRot = 0.0f;
 
             ManagerWindow() = default;
-            ManagerWindow(const char* name) : GUIWindow(name) {}
+            ManagerWindow(const char* name, std::shared_ptr<Detector> detector);
 
-            void init() override {}
+            void init() override {};
             void onEvent(const event& e) override {}
+
+            void attachDetector(std::shared_ptr<Detector> detector);
 
             virtual ~ManagerWindow() = default;
         private:
+            std::shared_ptr<Detector> m_detector;
+
+            ImFont* largerFont;
             void onRender() override;
             void preFrame() override {}
     };

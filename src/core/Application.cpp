@@ -30,11 +30,12 @@ namespace viz
 
         m_detector->init(m_cli);
         m_renderer->attachDetector(m_detector);
+        m_cli.start();
 
         m_GUIWindows.push_back(std::make_unique<Dockspace>("MainDock", ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking));
         m_GUIWindows.push_back(std::make_unique<SceneWindow>("Scene", m_renderer));
         m_GUIWindows.push_back(std::make_unique<ConsoleWindow>("Console"));
-        m_GUIWindows.push_back(std::make_unique<ManagerWindow>("Manager"));
+        m_GUIWindows.push_back(std::make_unique<ManagerWindow>("Manager", m_detector));
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -42,6 +43,7 @@ namespace viz
             m_GUIWindows[i]->init();
         ImGui::EndFrame();
 
+        m_detector->setEventCallback(std::bind(&Application::onEvent, this, std::placeholders::_1));
         m_appWin->setEventCallback(std::bind(&Application::onEvent, this, std::placeholders::_1));
     }
 
@@ -65,6 +67,7 @@ namespace viz
 
                 ImGui::Render();
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
                 m_detector->update();
 
                 const ManagerWindow* manager = dynamic_cast<ManagerWindow*>(m_GUIWindows[3].get());
@@ -77,9 +80,11 @@ namespace viz
     }
 
     void Application::onEvent(event& e){
-        std::string str = e.toString();
-		ConsoleWindow* console = dynamic_cast<ConsoleWindow*>(m_GUIWindows[2].get());
-        console->AddLog(str.c_str());
+        if(e.getEventType() == eventType::particleHit){
+            std::string str = e.toString();
+            ConsoleWindow* console = dynamic_cast<ConsoleWindow*>(m_GUIWindows[2].get());
+            console->AddLog(str.c_str());
+        }
 
         for(int i = 0 ; i < m_GUIWindows.size(); i++){
             m_GUIWindows[i]->onEvent(e);

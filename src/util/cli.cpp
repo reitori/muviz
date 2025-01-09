@@ -158,6 +158,15 @@ int VisualizerCli::configure() {
                 logger->error("Config for frontend {} with name '{}' does not contain angle vector!", k, source["name"]);
                 return -1; // throw std::invalid_argument("missing angle vector in config");
             }
+            if(!source.contains("size")){
+                logger->error("Config for frontend {} with name '{}' does not contain chip size!", k, source["name"]);
+                return -1; // throw std::invalid_argument("missing angle vector in config");
+            }
+            if(!source.contains("rowcol")){
+                logger->error("Config for frontend {} with name '{}' does not contain maximum number of rows/columns!", k, source["name"]);
+                return -1; // throw std::invalid_argument("missing angle vector in config");
+            }
+
             
             dataLoaders.push_back(StdDict::getDataLoader(source["type"]));
             feIdMap[source["name"]] = k;
