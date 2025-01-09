@@ -139,7 +139,7 @@ namespace viz
     }
 
     void ManagerWindow::onRender(){
-        ImGui::ColorPicker4("Change Screen", color);
+        //ImGui::ColorPicker4("Change Screen", color);
 
 
         std::vector<Chip> chips = m_detector->getChips();
