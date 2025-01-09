@@ -9,7 +9,8 @@ namespace viz {
 		windowClose, windowResize,
 		appUpdate, appRender,
 		keyPress, keyRelease,
-		mouseButtonPress, mouseButtonRelease, mouseMove, mouseScroll
+		mouseButtonPress, mouseButtonRelease, mouseMove, mouseScroll,
+		particleHit
 	};
 
 	enum eventCategory {
@@ -18,12 +19,14 @@ namespace viz {
 		eventCatApp,
 		eventCatKey,
 		eventCatMouse,
+		eventCatParticle
 	};
 
 	struct EventData {
 		EventData() = default;
 		std::pair<float, float> floatPairedData;
 		std::pair<unsigned int, unsigned int> uintPairedData;
+		std::pair<std::string, unsigned int> stringUIntPairedData;
 		viz::key::keyCodes keyButton;
 		viz::mouse::mouseCodes mouseButton;
 	};
