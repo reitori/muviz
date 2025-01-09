@@ -5,6 +5,10 @@
 #include "core/header.h"
 #include "OpenGL/Scene/Mesh.h"
 
+#include "Events/ParticleEvent.h"
+
+#include <mutex>
+
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -33,12 +37,15 @@ namespace viz{
             void init(const VisualizerCli& cli);
 
             void update();
-            void render(const Shader& shader) const;
+            void setEventCallback(const std::function<void(event& e)>& callback) { eventCallback = callback; }
 
-            std::vector<Chip> getChips() { return m_chips;}
+            void render(const Shader& shader) const;
+            std::vector<Chip> getChips() const { return m_chips;}
 
             uint32_t totHits();
         private:
+            std::mutex m_mutex; //render and update functions read/writes from the same buffer, respectively. Mutex so that update may be called asynchronously
+
             glm::mat4 transform(glm::vec3 scale, glm::vec3 eulerRot, glm::vec3 pos, bool isInRadians = false);
             const VisualizerCli* m_cli;
 
@@ -54,6 +61,7 @@ namespace viz{
             glm::vec3 hitScale = glm::vec3(0.05f, 0.05f, 0.05f);
 
             SimpleMesh ChipMesh, HitMesh;
+            std::function<void(event& e)> eventCallback;
     };
 }
 
