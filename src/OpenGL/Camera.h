@@ -4,6 +4,7 @@
 #include "core/header.h"
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -29,7 +30,8 @@ namespace viz{
             void setPos(glm::vec3 pos);
 
             void displace(glm::vec3 disp);
-            void rotate(glm::vec3 rot);
+            void rotateAngle(glm::vec3 rot); //rotate over an angle
+            void rotateAxis(glm::vec3 axis, float angle); //rotate about an axis
             void addScroll(float scroll);
 
             glm::vec3 getFront() const { return glm::normalize(glm::mat4_cast(data.orientation) * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f));}

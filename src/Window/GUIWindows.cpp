@@ -92,7 +92,19 @@ namespace viz
                 m_mousePressed = false;
                 break;
             }
-        case eventType::mouseMove: {
+        case eventType::keyPress:{
+                std::cout << "key pressed: " << data->keyButton << std::endl;
+                if(data->keyButton == key::LeftShift || data->keyButton == key::RightShift){
+                    m_shiftPressed = true;
+                }
+            }
+        case eventType::keyRelease:{
+                std::cout << "key released: " << data->keyButton << std::endl;
+                if(data->keyButton == key::LeftShift || data->keyButton == key::RightShift){
+                    m_shiftPressed = false;
+                }
+            }
+        case eventType::mouseMove:{
                 ImVec2 mousePos = mouseRelToWin(ImVec2(data->floatPairedData.first, data->floatPairedData.second));
                 if(mouseInWin(mousePos)){
                     m_mouseInWin = true;
@@ -100,7 +112,12 @@ namespace viz
                     Camera* cam = m_renderer->getCamera();
                     ImVec2 dir = ImVec2(mousePos.x - m_lastMouse.x, mousePos.y - m_lastMouse.y);
                     glm::vec3 disp = 0.0075f * (dir.x * cam->getRight() - dir.y * cam->getUp());
-                    cam->displace(-disp);
+
+                    if(m_shiftPressed){ //rotate camera
+                        
+                    }else{ //otherwise displace
+                        cam->displace(-disp);
+                    }
                     }
                 }  
                 else{

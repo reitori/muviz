@@ -28,6 +28,7 @@ namespace viz{
             void render() override;
             void setEventCallback(const std::function<void(event& e)>& callback) { eventCallback = callback; }
 
+            inline bool windowShouldClose() const { return glfwWindowShouldClose(m_window); }
             inline const GLFWwindow* getGLFWWindow() const { return m_window; }
             inline void setAsContext() {glfwMakeContextCurrent(m_window);}
             inline void swapBuffers() {glfwSwapBuffers(m_window);}

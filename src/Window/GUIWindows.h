@@ -65,7 +65,7 @@ namespace viz{
         private:
             std::shared_ptr<Renderer> m_renderer;
             ImVec2 m_lastMouse, m_currMouse, m_currPos, m_currSize; //mouse positions are relative to window
-            bool m_mousePressed = false, m_mouseInWin = false;
+            bool m_mousePressed = false, m_mouseInWin = false, m_shiftPressed = false;
 
             void onRender() override;
             void preFrame() override {}

@@ -55,9 +55,8 @@ namespace viz{
 				break;
 			}
 			case GLFW_REPEAT: {
-				//You still need to create the repeat sender here
-				//Do it later
-				//Whenever you finish this, make sure to switch the GLFW_REPEAT case with the GLFW_RELEASE case to make sure it gets checked in the correct order
+				viz::keyEventPressed keyEvent((viz::key::keyCodes)key);
+				windowManager->eventCallback(keyEvent);
 				break;
 			}
 		}

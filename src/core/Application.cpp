@@ -52,7 +52,7 @@ namespace viz
             float lastTime = 0.0f;
             float currTime;
 
-            while(true){
+            while(!m_appWin->windowShouldClose()){
                 currTime = glfwGetTime();
                 ConsoleWindow* console = dynamic_cast<ConsoleWindow*>(m_GUIWindows[2].get());
                 console->fps = 1.0f/(currTime - lastTime);
@@ -151,6 +151,11 @@ namespace viz
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
+
+        m_GUIWindows.clear(); std::cout << "Detector pointer instances: " << m_detector.use_count() << std::endl;
+        m_appWin.reset(); std::cout << "Renderer pointer instances: " << m_renderer.use_count() << std::endl;
+        m_detector.reset();
+        m_renderer.reset();
 
         glfwTerminate();
     }

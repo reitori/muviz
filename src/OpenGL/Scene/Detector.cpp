@@ -124,7 +124,7 @@ namespace viz{
         HitMesh.setInstances(m_hitTransforms.size(), m_hitTransforms, m_hitColors);
     }
 
-    void Detector::render(const Shader& shader) const{
+    void Detector::render(const Shader& shader){
         ChipMesh.render(shader);
         HitMesh.render(shader);
     }

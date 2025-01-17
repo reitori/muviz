@@ -27,10 +27,16 @@ namespace viz{
 
         data.position += disp; 
     }
-    void Camera::rotate(glm::vec3 rot) { 
+    void Camera::rotateAngle(glm::vec3 rot) { 
         if(cameraLocked)
             return;
         data.orientation = glm::quat(rot) * data.orientation; 
+    }
+    void Camera::rotateAxis(glm::vec3 axis, float angle){
+        if(cameraLocked)
+            return;
+
+        data.orientation = glm::angleAxis(angle, axis) * data.orientation; 
     }
 
     void Camera::addScroll(float scroll){
