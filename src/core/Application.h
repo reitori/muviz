@@ -20,6 +20,21 @@
 
 #include "cli.h"
 
+
+/*
+TODO:
+ - Camera rotatable ->
+ - Shading / marker around edges of chips to delinate between them
+ - Testing realtime operation
+ - Make hit size configurable (w/l), and make them visible on both sides of the chip
+ - X/Y/Z axis indicator
+ - If you can make chips semi-transparent?
+ - Room shape thing?
+ - Clickable chips?
+ - CAD models?
+*/
+
+
 namespace viz{
     class Application{
         public:

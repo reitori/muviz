@@ -35,7 +35,7 @@ namespace viz
         m_GUIWindows.push_back(std::make_unique<Dockspace>("MainDock", ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking));
         m_GUIWindows.push_back(std::make_unique<SceneWindow>("Scene", m_renderer));
         m_GUIWindows.push_back(std::make_unique<ConsoleWindow>("Console"));
-        m_GUIWindows.push_back(std::make_unique<ManagerWindow>("Manager", m_detector));
+        m_GUIWindows.push_back(std::make_unique<ManagerWindow>("Manager", m_renderer));
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -148,14 +148,14 @@ namespace viz
 
 
     Application::~Application(){
-        ImGui_ImplOpenGL3_Shutdown();
-        ImGui_ImplGlfw_Shutdown();
-        ImGui::DestroyContext();
-
         m_GUIWindows.clear(); std::cout << "Detector pointer instances: " << m_detector.use_count() << std::endl;
         m_appWin.reset(); std::cout << "Renderer pointer instances: " << m_renderer.use_count() << std::endl;
         m_detector.reset();
         m_renderer.reset();
+
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
 
         glfwTerminate();
     }

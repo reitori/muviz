@@ -61,7 +61,7 @@ namespace viz{
             
             auto it = m_Cameras.find(m_currCam);
             m_Shaders[0].setMat4("uView", it->second.getView());
-            m_Shaders[0].setMat4("uProj", it->second.data.projection);
+            m_Shaders[0].setMat4("uProj", it->second.getCamData().projection);
 
             m_detector->render(m_Shaders[0]);
 

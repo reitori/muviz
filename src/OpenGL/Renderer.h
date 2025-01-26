@@ -33,6 +33,8 @@ namespace viz{
             inline std::uint16_t getWidth() const { return m_framebuffer->getWidth();}
             inline std::uint16_t getHeight() const { return m_framebuffer->getHeight();}
             inline GLuint getTexID() const { return m_framebuffer->getTexID(); }
+
+            const std::shared_ptr<Detector> getDetector() const { return m_detector; }
             
             void render();
         private:

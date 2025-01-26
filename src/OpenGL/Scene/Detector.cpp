@@ -89,15 +89,15 @@ namespace viz{
         m_nfe = 0;
         m_size = 0;
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::nanoseconds(25));
         for(int i = 0; i < m_cli->getSize(); i++) {
-            
-
             std::unique_ptr<std::vector<pixelHit>> data = m_cli->getData(i, true);
-            glm::vec3 chipScale = m_chips[i].scale;
             if(data){
-                m_size += data->size();
+                glm::vec3 chipScale = m_chips[i].scale;
+
                 Chip* currChip = &m_chips[i];
+                float hitSize = (1.0f / std::min(currChip->maxRows, currChip->maxCols)) * currChip->scale[0];
+                m_size += data->size();
                 
                 for(int j = 0; j < data->size(); j++){
                     std::uint16_t row = (*data)[j].row;
@@ -105,10 +105,10 @@ namespace viz{
 
                     float diffx = (2.0f * ((float)row / (float)currChip->maxRows) - 1.0f) * currChip->scale[0];
                     float diffy = (2.0f * ((float)col / (float)currChip->maxCols) - 1.0f) * currChip->scale[1];
-                    glm::vec3 posRelToChip =  glm::vec3(diffx, diffy, currChip->scale[2]);
-                    glm::vec3 pos = currChip->pos + glm::toMat3(glm::quat(glm::vec3(viz_TO_RADIANS(currChip->eulerRot[0]), viz_TO_RADIANS(currChip->eulerRot[1]), viz_TO_RADIANS(currChip->eulerRot[2])))) * posRelToChip;
+                    glm::vec3 posRelToChip =  glm::vec3(diffx, diffy, 0.0f);
+                    glm::vec3 pos = currChip->pos + glm::toMat3(glm::quat(glm::vec3(viz_TO_RADIANS(currChip->eulerRot[0]), viz_TO_RADIANS(currChip->eulerRot[1]), viz_TO_RADIANS(currChip->eulerRot[2])))) * posRelToChip; //this could probably be optimized for later
 
-                    m_hitTransforms.push_back(transform(hitScale, currChip->eulerRot, pos));
+                    m_hitTransforms.push_back(transform(glm::vec3(hitSize, hitSize, currChip->scale[2] + 0.1f), currChip->eulerRot, pos));
                     m_hitColors.push_back(glm::vec4(1.0f, 0.2509f, 0.0235f, 0.95f));
 
                     currChip->hits += 1;
