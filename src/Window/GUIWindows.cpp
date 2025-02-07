@@ -83,44 +83,67 @@ namespace viz
         const EventData* data = e.getData();
         switch (type)
         {
-        case eventType::mouseButtonPress: {
+            case eventType::mouseButtonPress: {
                 if(data->mouseButton == mouse::mouseCodes::ButtonRight)
                     m_mousePressed = true;
-                break;
+                return;
             }
-        case eventType::mouseButtonRelease:{
+            case eventType::mouseButtonRelease:{
                 m_mousePressed = false;
-                break;
+                return;
             }
-        case eventType::mouseMove: {
+            case eventType::keyPress:{
+                if(data->keyButton == key::R){
+                    m_RPressed = true;
+                    return;
+                }
+                return;
+            }
+            case eventType::keyRelease:{
+                if(data->keyButton == key::R){
+                    m_RPressed = false;
+                    return;
+                }
+                return;
+            }
+            case eventType::mouseMove:{
                 ImVec2 mousePos = mouseRelToWin(ImVec2(data->floatPairedData.first, data->floatPairedData.second));
                 if(mouseInWin(mousePos)){
                     m_mouseInWin = true;
+
                     if(m_mousePressed){
-                    Camera* cam = m_renderer->getCamera();
-                    ImVec2 dir = ImVec2(mousePos.x - m_lastMouse.x, mousePos.y - m_lastMouse.y);
-                    glm::vec3 disp = 0.0075f * (dir.x * cam->getRight() - dir.y * cam->getUp());
-                    cam->displace(-disp);
+                        Camera* cam = m_renderer->getCamera();
+                        ImVec2 dir = ImVec2(mousePos.x - m_lastMouse.x, m_lastMouse.y - mousePos.y); //note reversal in y-coordinate is due to glfw coordinate system is from top down
+                        glm::vec3 disp = 0.75f * glm::normalize(dir.x * cam->getRight() + dir.y * cam->getUp());
+
+                        if(m_RPressed){ //rotate camera
+                            cam->rotate(0.15f * dir.y, 0.15f * dir.x);
+                        }else{ //otherwise displace
+                            cam->displace(-disp);
+                        }
+
+                        m_renderer->sortTransparentObjects();
                     }
                 }  
                 else{
                     m_mouseInWin = false;
                 }
                 m_lastMouse = mousePos;
-                break;
+                return;
             }    
-        case eventType::mouseScroll: {
+            case eventType::mouseScroll: {
                 if(m_mouseInWin){
-                    Camera* cam = m_renderer->getCamera("Main");
-                    cam->displace(-cam->getFront() * 0.75f * e.getData()->floatPairedData.second);
+                    Camera* cam = m_renderer->getCamera();
+
+                    cam->displace(cam->getFront() * 0.75f * e.getData()->floatPairedData.second);
+                    m_renderer->sortTransparentObjects();
                 }
-                break;
+                return;
             }
         
-        default:
-            break;
+            default:
+                break;
         }
-
     }
 
     bool SceneWindow::mouseInWin(ImVec2 mouseRelativeToWin){
@@ -130,19 +153,18 @@ namespace viz
         return false;
     }
 
-    ManagerWindow::ManagerWindow(const char* name, std::shared_ptr<Detector> detector) : GUIWindow(name){
-        m_detector = detector;
+    ManagerWindow::ManagerWindow(const char* name, std::shared_ptr<Renderer> renderer) : GUIWindow(name){
+        m_renderer = renderer;
     }
 
-    void ManagerWindow::attachDetector(std::shared_ptr<Detector> detector){
-        m_detector = detector;
+    void ManagerWindow::attachDetector(std::shared_ptr<Renderer> renderer){
+        m_renderer = renderer;
     }
 
     void ManagerWindow::onRender(){
         //ImGui::ColorPicker4("Change Screen", color);
 
-
-        std::vector<Chip> chips = m_detector->getChips();
+        std::vector<Chip> chips = m_renderer->getDetector()->getChips();
         for(int i = 0; i < chips.size(); i++){
             ImGui::Separator();
             ImGui::Text("Name: %s", chips[i].name.c_str());

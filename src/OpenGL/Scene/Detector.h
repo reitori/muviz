@@ -6,8 +6,7 @@
 #include "OpenGL/Scene/Mesh.h"
 
 #include "Events/ParticleEvent.h"
-
-#include <mutex>
+#include "OpenGL/Camera.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
@@ -39,13 +38,12 @@ namespace viz{
             void update();
             void setEventCallback(const std::function<void(event& e)>& callback) { eventCallback = callback; }
 
-            void render(const Shader& shader) const;
+            void render(const Shader& shader);
+            void sortTransparent(const Camera& cam);
             std::vector<Chip> getChips() const { return m_chips;}
 
             uint32_t totHits();
         private:
-            std::mutex m_mutex; //render and update functions read/writes from the same buffer, respectively. Mutex so that update may be called asynchronously
-
             glm::mat4 transform(glm::vec3 scale, glm::vec3 eulerRot, glm::vec3 pos, bool isInRadians = false);
             const VisualizerCli* m_cli;
 

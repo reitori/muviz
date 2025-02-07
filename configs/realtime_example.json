@@ -12,19 +12,27 @@
     },
     "sources": [
         {
+            "name": "test",
+            "position": [0, 0, 0],
+            "angle": [0, 0, 0],
+            "size": [20, 20, 20],
+            "rowcol": [400, 384],
+            "enable": 0
+        },
+        {
             "name": "test_chip1",
             "position": [0, 5, 0],
             "angle": [10, 90, -30],
-            "size": [20, 20, 1],
-            "rowcol": [400, 400],
+            "size": [20, 20, 0.1],
+            "rowcol": [384, 400],
             "enable": 1
         },
         {
             "name": "test_chip2",
             "position": [0, -5, 0],
             "angle": [10, 90, -30],
-            "size": [20, 20, 1],
-            "rowcol": [400, 400],
+            "size": [20, 20, 0.1],
+            "rowcol": [384, 400],
             "enable": 1
         }
     ]
