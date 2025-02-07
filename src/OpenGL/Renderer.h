@@ -37,6 +37,7 @@ namespace viz{
             const std::shared_ptr<Detector> getDetector() const { return m_detector; }
             
             void render();
+            void sortTransparentObjects();
         private:
             friend class Application;
             std::shared_ptr<Detector> m_detector;

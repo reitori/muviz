@@ -15,7 +15,7 @@ namespace viz{
         glm::vec3 front, right, up;
         glm::vec2 screenScale;
         glm::vec2 screenSize;
-        float zoom;
+        float zoom, sensitivity;
     };
 
     class Camera{
@@ -33,6 +33,8 @@ namespace viz{
             void rotate(float dispRightAngle, float dispUpAngle); //rotate over an angle
             void addScroll(float scroll);
 
+            void setRotation(float sensitivity) {data.sensitivity = sensitivity; }
+
             const CamData& getCamData() const { return data; }
 
             glm::vec3 getFront() const { return data.front;}
@@ -40,6 +42,7 @@ namespace viz{
             glm::vec3 getRight() const { return data.right; }
 
             glm::mat4 getView() const;
+            glm::mat4 getProj() const;
         private:
             CamData data;
 

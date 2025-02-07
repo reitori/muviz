@@ -79,8 +79,6 @@ namespace viz
     }
 
     void SceneWindow::onEvent(const event& e){
-        std::cout << e.toString().c_str() << " with mouse in win bool " << m_mouseInWin << std::endl;
-        
         eventType type = e.getEventType();
         const EventData* data = e.getData();
         switch (type)
@@ -116,13 +114,15 @@ namespace viz
                     if(m_mousePressed){
                         Camera* cam = m_renderer->getCamera();
                         ImVec2 dir = ImVec2(mousePos.x - m_lastMouse.x, m_lastMouse.y - mousePos.y); //note reversal in y-coordinate is due to glfw coordinate system is from top down
-                        glm::vec3 disp = 0.15f * glm::normalize(dir.x * cam->getRight() + dir.y * cam->getUp());
+                        glm::vec3 disp = 0.75f * glm::normalize(dir.x * cam->getRight() + dir.y * cam->getUp());
 
                         if(m_RPressed){ //rotate camera
-                            cam->rotate(0.25f * dir.y, 0.25f * dir.x);
+                            cam->rotate(0.15f * dir.y, 0.15f * dir.x);
                         }else{ //otherwise displace
                             cam->displace(-disp);
                         }
+
+                        m_renderer->sortTransparentObjects();
                     }
                 }  
                 else{
@@ -133,9 +133,10 @@ namespace viz
             }    
             case eventType::mouseScroll: {
                 if(m_mouseInWin){
-                    Camera* cam = m_renderer->getCamera("Main");
+                    Camera* cam = m_renderer->getCamera();
 
                     cam->displace(cam->getFront() * 0.75f * e.getData()->floatPairedData.second);
+                    m_renderer->sortTransparentObjects();
                 }
                 return;
             }
@@ -162,7 +163,6 @@ namespace viz
 
     void ManagerWindow::onRender(){
         //ImGui::ColorPicker4("Change Screen", color);
-
 
         std::vector<Chip> chips = m_renderer->getDetector()->getChips();
         for(int i = 0; i < chips.size(); i++){

@@ -3,15 +3,15 @@
 namespace viz{
     std::vector<SimpleVertex> ChipVertices = {
         // Front Vertices //Color
-        {glm::vec3(-1.0f, -1.0f,  1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 1.0f)},
-        {glm::vec3(1.0f, -1.0f,  1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 1.0f)},
-        {glm::vec3(1.0f,  1.0f,  1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 1.0f)},
-        {glm::vec3(-1.0f,  1.0f,  1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 1.0f)},
-        // Back Vertices  //Color
-        {glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 1.0f)},
-        {glm::vec3(1.0f, -1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 1.0f)},
-        {glm::vec3(1.0f,  1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 1.0f)},
-        {glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 1.0f)}
+        {glm::vec3(-1.0f, -1.0f,  1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)},
+        {glm::vec3(1.0f, -1.0f,  1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)},
+        {glm::vec3(1.0f,  1.0f,  1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)},
+        {glm::vec3(-1.0f,  1.0f,  1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f,0.05f)},
+        // Back Vertices  //Colo
+        {glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)},
+        {glm::vec3(1.0f, -1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)},
+        {glm::vec3(1.0f,  1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)},
+        {glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)}
     };
 
     std::vector<SimpleVertex> HitVertices = {
@@ -78,7 +78,7 @@ namespace viz{
             
             m_chips.push_back(tempChip);
             m_chipTransforms.push_back(tempTfm);
-            m_chipColors.push_back(glm::vec4(0.3921f, 0.3921f, 0.3921f, 1.0f));
+            m_chipColors.push_back(glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.25f));
         };
         ChipMesh.setInstances(m_chips.size(), m_chipTransforms, m_chipColors);
 
@@ -109,7 +109,7 @@ namespace viz{
                     glm::vec3 pos = currChip->pos + glm::toMat3(glm::quat(glm::vec3(viz_TO_RADIANS(currChip->eulerRot[0]), viz_TO_RADIANS(currChip->eulerRot[1]), viz_TO_RADIANS(currChip->eulerRot[2])))) * posRelToChip; //this could probably be optimized for later
 
                     m_hitTransforms.push_back(transform(glm::vec3(hitSize, hitSize, currChip->scale[2] + 0.1f), currChip->eulerRot, pos));
-                    m_hitColors.push_back(glm::vec4(1.0f, 0.2509f, 0.0235f, 0.95f));
+                    m_hitColors.push_back(glm::vec4(1.0f, 0.2509f, 0.0235f, 1.0f));
 
                     currChip->hits += 1;
 
@@ -125,8 +125,40 @@ namespace viz{
     }
 
     void Detector::render(const Shader& shader){
-        ChipMesh.render(shader);
+        glDisable(GL_BLEND);
         HitMesh.render(shader);
+
+        glEnable(GL_BLEND);
+        glDepthMask(GL_FALSE);
+        ChipMesh.render(shader);
+        glDepthMask(GL_TRUE);
+    }
+
+    void Detector::sortTransparent(const Camera& cam){
+        std::vector<std::pair<unsigned int, float>> perm(m_chips.size());
+        for(int i = 0; i < m_chips.size(); i++){
+            perm[i] = std::pair<unsigned int, float>(i, (cam.getProj() * cam.getView() * glm::vec4(m_chips[i].pos, 1.0f)).z);
+            //std::cout << "length of " << i << " chip stored now is" << perm[i].second << std::endl;
+        }
+        std::sort(perm.begin(), perm.end(), [](std::pair<unsigned int, float>& left, std::pair<unsigned int, float>& right){
+            return left.second > right.second;
+        });
+        std::vector<glm::mat4> secondMat = m_chipTransforms;
+        for(int i = 0; i < perm.size(); i++){
+            m_chipTransforms[i] = secondMat[perm[i].first];
+        }
+        std::vector<glm::vec4> secondVec = m_chipColors;
+        for(int i = 0; i < perm.size(); i++){
+            m_chipColors[i] = secondVec[perm[i].first];
+        }
+
+        std::cout << "Here ---" << std::endl;
+        for(int i = 0; i < perm.size(); i++){
+            std::cout << i << ": " << m_chips[perm[i].first].name.c_str() << " perm is: " << perm[i].first << std::endl;
+            
+        }
+
+        ChipMesh.setInstances(m_chips.size(), m_chipTransforms, m_chipColors);
     }
 
     glm::mat4 Detector::transform(glm::vec3 scale, glm::vec3 eulerRot, glm::vec3 pos, bool isInRadians){

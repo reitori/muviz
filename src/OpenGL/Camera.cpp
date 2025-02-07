@@ -11,6 +11,7 @@ namespace viz{
         data.screenScale = glm::vec2(1.0f, 1.0f);
         data.screenSize = glm::vec2(1.0f, 1.0f);
         data.zoom = 1.0f;
+        data.sensitivity = 1.0f;
     }
 
     void Camera::resize(int width, int height){
@@ -49,8 +50,8 @@ namespace viz{
         if(cameraLocked)
             return;
 
-        float upAngleRad = viz_TO_RADIANS(dispRightAngle);
-        float rightAngleRad = viz_TO_RADIANS(dispUpAngle);
+        float upAngleRad = data.sensitivity * viz_TO_RADIANS(dispRightAngle);
+        float rightAngleRad = data.sensitivity * viz_TO_RADIANS(dispUpAngle);
 
         glm::vec3 x = (float)(cos(upAngleRad) * sin(rightAngleRad)) * data.right;
         glm::vec3 y = (float)sin(upAngleRad) * data.up;
@@ -59,7 +60,7 @@ namespace viz{
         glm::vec3 front = glm::normalize(x+y+z);
 
         if(glm::dot(front, glm::vec3(0.0f, 1.0f, 0.0f)) > 0.999f)
-            data.front = glm::vec3(0.0f, 1.0f, 0.0f);
+            data.front = glm::vec3(-data.front.x, data.front.y, -data.front.z);
         else{
             data.front = front;
             updateOrientation();
@@ -69,12 +70,16 @@ namespace viz{
     void Camera::addScroll(float scroll){
         if(cameraLocked)
             return;
-        data.screenScale += scroll;
+        data.zoom += scroll;
         calcProj();
     }
 
     glm::mat4 Camera::getView() const{
         return data.orientation * glm::translate(glm::mat4(1.0f), -data.position);
+    }
+    
+    glm::mat4 Camera::getProj() const{
+        return data.projection;
     }
 
     inline void Camera::updateOrientation(){

@@ -20,8 +20,18 @@ namespace viz{
         "{\n"
         "   mat4 modelTransform = uIsInstanced ? aInstanceModel : uModel;\n"
         "   gl_Position = uProj * uView * modelTransform * vec4(aPos, 1.0);\n"
-        "   fragOut = uIsInstanced ? mix(aFrag, aInstanceFrag, 0.5) : aFrag;\n"
+        "   fragOut = uIsInstanced ? aInstanceFrag : aFrag;\n"
         "}\0";
+
+    const char* geometryShaderSource="version 330 compatibility\n"
+        "layout (triangles_adjacency) in;\n"
+        "layout (line_strip) out\n;"
+        
+        "void main();\n"
+        "{\n"
+        "   "
+        "}\n";
+
 
     const char* fragmentShaderSource="#version 330 core\n"
         "in vec4 fragOut;\n"
@@ -43,6 +53,8 @@ namespace viz{
         m_framebuffer->bind();
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
         m_framebuffer->unbind();
 
         m_activeShaderNum = 0;
@@ -92,5 +104,10 @@ namespace viz{
         auto it = m_Cameras.find(name);
         if(it != m_Cameras.end())
             m_Cameras.erase(it);
+    }
+
+    void Renderer::sortTransparentObjects(){
+        auto it = m_Cameras.find(m_currCam);
+        m_detector->sortTransparent(it->second);
     }
 }

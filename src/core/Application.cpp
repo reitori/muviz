@@ -36,6 +36,7 @@ namespace viz
         m_GUIWindows.push_back(std::make_unique<SceneWindow>("Scene", m_renderer));
         m_GUIWindows.push_back(std::make_unique<ConsoleWindow>("Console"));
         m_GUIWindows.push_back(std::make_unique<ManagerWindow>("Manager", m_renderer));
+        m_GUIWindows.push_back(std::make_unique<SceneWindow>("SceneTwo", m_renderer));
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
