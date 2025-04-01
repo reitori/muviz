@@ -36,12 +36,6 @@ class Event {
             bcid = arg_bcid;
             nHits = 0;
         }
-        ~Event() = default;
-        
-        void addEvent(const Event& event) {
-            hits.insert(hits.end(), event.hits.begin(), event.hits.end());
-            nHits += event.nHits;
-        }
 
         void addHit(Hit hit) {
             hits.push_back(hit);
@@ -53,10 +47,8 @@ class Event {
             nHits++;
         }
 
-        uint16_t l1id;
-        uint16_t bcid;
-        uint32_t tag;
-        uint16_t nHits;
+        uint32_t l1id, bcid, tag;
+        uint16_t nHits = 0;
         std::vector<Hit> hits;
 };
 
@@ -70,29 +62,120 @@ class EventData {
             curEvent = &events.back();
         }
 
+        void addEvent(const Event& newEvent){
+            events.push_back(newEvent);
+            curEvent = &events.back();
+            nHits += newEvent.nHits;
+        }
+        
+        void addEventData(const EventData& newEventData){
+            events.insert(events.end(), newEventData.events.begin(), newEventData.events.end());
+            curEvent = &events.back();
+            nHits += newEventData.nHits;
+        }
+
         void delete_back() {
+            nHits -= events.back().nHits;
             events.pop_back();
             curEvent = &events.back();
         }
 
         void addHit(Hit hit) {
             curEvent->addHit(hit);
-            totalHits++;
+            nHits++;
         }
 
         void addHit(unsigned arg_row, unsigned arg_col, unsigned arg_timing) {
             curEvent->addHit(arg_row, arg_col, arg_timing);
-            totalHits++;
+            nHits++;
+        }
+
+        bool empty() const{
+            return events.empty();
         }
 
         size_t size() {
             return events.size();
         }
 
+        bool bcidChanged = false;
+        std::vector<size_t> bcidChangeIndex; //Index of event with different bcid compared to previous event
+        
         Event* curEvent;
         std::vector<Event> events;
-        unsigned totalHits;
+        uint16_t nHits = 0;
 };
+
+class ReconstructedBunch{
+    public:
+        ReconstructedBunch(){
+            bcid = 0;
+            totalFEs = 0;
+            nHits = 0;
+        }
+        ReconstructedBunch(uint32_t arg_bcid, size_t arg_totalFEs) {
+            bcid = arg_bcid;
+            totalFEs = arg_totalFEs;
+            nHits = 0;
+
+            fe_events.resize(arg_totalFEs);
+        }
+        void addEvent(const Event& newEvent, uint16_t fe_id){
+            if(this->bcid != newEvent.bcid || fe_id > totalFEs)
+                return;
+
+            nHits += newEvent.nHits;
+            fe_events[fe_id].addEvent(newEvent);
+        }
+
+        void addEventData(const EventData& newEventData, uint16_t fe_id){
+            for(int i = 0; i < newEventData.events.size(); i++){
+                if(newEventData.events[i].bcid == bcid){
+                    fe_events[fe_id].addEvent(newEventData.events[i]);
+                    nHits += newEventData.nHits;
+                }
+            }
+        }
+    
+        //Adds EventData using the bcidChangeIndex (Assumes that the bcidChangeIndex indexes events correctly)
+        void addEventDataCI(const EventData& newEventData, uint16_t fe_id){
+            std::vector<size_t> bcidChangeIndex = newEventData.bcidChangeIndex;
+            if(bcidChangeIndex.size()!=0){
+                for(int i = 0; i < bcidChangeIndex.size(); i++){
+                    if(newEventData.events[bcidChangeIndex[i]].bcid == bcid){
+                        size_t endIndex = ( i == (bcidChangeIndex.size() - 1)) ? bcidChangeIndex.size() : bcidChangeIndex[i+1];
+                        for(size_t j = bcidChangeIndex[i]; j < endIndex; j++){
+                            fe_events[fe_id].addEvent(newEventData.events[j]);
+                            nHits += newEventData.events[j].nHits;
+                        }
+                    }
+                }
+            }
+            else if(bcidChangeIndex.size() == 0 && !newEventData.events.empty() && bcid == newEventData.events[0].bcid){
+                fe_events[fe_id].addEventData(newEventData);
+            }
+        }
+        void addReconstructedBunch(const ReconstructedBunch& newBunch){
+            if(this->bcid != newBunch.bcid || this->bcid != newBunch.totalFEs)
+                return; 
+
+            for(unsigned int i = 0; i < newBunch.totalFEs; i++){
+                fe_events[i].addEventData(newBunch.fe_events[i]);
+            }
+        }
+        //Gives the memory to user
+        std::unique_ptr<std::vector<EventData>> getEventData(){
+            return std::make_unique<std::vector<EventData>>(std::move(fe_events));
+        }
+        std::unique_ptr<EventData> getEventDataFE(uint16_t fe_id){
+            return std::make_unique<EventData>(std::move(fe_events[fe_id]));
+        }
+        uint16_t totalFEs;
+        uint32_t nHits, bcid;
+    private:
+        std::vector<EventData> fe_events; //Event with associated fe_id. ie, access events of fe with id fe_id fe_events[fe_id]
+};
+
 
 class DataLoader{
     public:

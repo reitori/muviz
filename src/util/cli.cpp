@@ -101,14 +101,16 @@ int VisualizerCli::parseOptions(int argc, char *argv[]) {
 }
 
 VisualizerCli::VisualizerCli() {
-
+    uncompletedReconEvents = std::make_unique<std::vector<ReconstructedBunch>>();
 }
 
 VisualizerCli::~VisualizerCli() {
 
 }
 
-int VisualizerCli::init(int argc, char** argv) {
+int VisualizerCli::init(int argc, char** argv, CLIstate argstate) {
+
+    state = argstate;
 
     int ret = parseOptions(argc, argv);
     
@@ -136,7 +138,19 @@ int VisualizerCli::init(int argc, char** argv) {
 
 int VisualizerCli::configure() {
     logger->info("Configuring data loaders...");
-    for(int i = 0, k=0; i < config["sources"].size(); i++) {
+
+    uint8_t numSources = config["sources"].size();
+
+    if(numSources == 0){
+        logger->warn("No sources listed in config file");
+    }
+    
+    names.reserve(numSources);
+    configIdMap.reserve(numSources);
+    clipboards.reserve(numSources);
+    curr_fe_bcid.reserve(numSources);
+    
+    for(int i = 0, k=0; i < numSources; i++) {
         auto source = config["sources"][i];
         if(!source.contains("name")) {
             source["name"] = "anon_" + std::to_string(i);
@@ -171,6 +185,7 @@ int VisualizerCli::configure() {
             dataLoaders.push_back(StdDict::getDataLoader(source["type"]));
             feIdMap[source["name"]] = k;
             names.push_back(source["name"]);
+            curr_fe_bcid.push_back(0);
             configIdMap.push_back(i);
             clipboards.push_back(std::make_shared<ClipBoard<EventData>>());
             dataLoaders[k++]->configure(source);
@@ -189,10 +204,17 @@ int VisualizerCli::configure() {
 }
 
 int VisualizerCli::start() {
+    if(started){
+        logger->info("Data loaders already are running");
+        return 0;
+    }
+
     logger->info("Starting data loaders for {} threads", dataLoaders.size());
     for(int i = 0; i < dataLoaders.size(); i++) {
         dataLoaders[i]->run();
     }
+
+    started = true;
     return 0;
 }
 
@@ -244,6 +266,7 @@ const json& VisualizerCli::getConfig(std::string fe_id) const{
 }
 
 std::unique_ptr<EventData> VisualizerCli::getRawData(int fe_id) const{
+
     if(!(fe_id >= 0 && fe_id < clipboards.size())) {
         logger->error("No frontend with index {} found in list! Returned data is nullptr", fe_id);
         return nullptr;
@@ -259,20 +282,18 @@ std::unique_ptr<EventData> VisualizerCli::getRawData(std::string fe_id)const{
     return getRawData(feIdMap.at(fe_id));
 }
 
-std::unique_ptr<std::vector<pixelHit>> VisualizerCli::getData(int fe_id, bool get_all) const{
-    auto result = std::make_unique<std::vector<pixelHit>>();
+std::unique_ptr<std::vector<Event>> VisualizerCli::loadEvents(int fe_id, bool get_all) const{
+    auto result = std::make_unique<std::vector<Event>>();
     // clipboards[fe_id].size();
+    uint32_t procLoop = 1;
     std::unique_ptr<EventData> proc;
     do {
+        std::cout << "procLoop: " <<  procLoop << std::endl;
+        procLoop++;
         if(proc) proc.reset();
         proc = getRawData(fe_id);
         if(proc) {
-            result->reserve(result->size() + proc->totalHits);
-            for(int i = 0; i < proc->size(); i++) {
-                for(int j = 0; j < proc->events[i].hits.size(); j++) {
-                    result->push_back({(uint16_t)proc->events[i].hits[j].row, (uint16_t)proc->events[i].hits[j].col});
-                }
-            }
+            result = std::make_unique<std::vector<Event>>(std::move(proc->events));
         }
     } 
     while(proc && get_all);
@@ -280,10 +301,180 @@ std::unique_ptr<std::vector<pixelHit>> VisualizerCli::getData(int fe_id, bool ge
     return result;
 }
 
+std::unique_ptr<std::vector<Event>> VisualizerCli::loadEvents(std::string fe_id, bool get_all) const{
+    if(feIdMap.find(fe_id) == feIdMap.end()) {
+        logger->error("No frontend with name {} found in list! Returned data is nullptr", fe_id);
+        return nullptr;
+    }
+    return loadEvents(feIdMap.at(fe_id), get_all);
+}
+
+std::unique_ptr<std::vector<pixelHit>> VisualizerCli::getData(int fe_id, bool get_all) const{
+    if(!(state == CLIstate::NORMAL))
+        return nullptr;
+
+    auto result = std::make_unique<std::vector<pixelHit>>();
+
+    auto events = loadEvents(fe_id, get_all);
+    for(int i = 0; i < events->size(); i++) {
+        for(int j = 0; j < (*events)[i].hits.size(); j++) {
+            result->push_back({(uint16_t)(*events)[i].hits[j].row, (uint16_t)(*events)[i].hits[j].col});
+        }
+    }
+
+    return result;
+}
+
 std::unique_ptr<std::vector<pixelHit>> VisualizerCli::getData(std::string fe_id, bool get_all) const{
+    if(!(state == CLIstate::NORMAL))
+        return nullptr;
+
     if(feIdMap.find(fe_id) == feIdMap.end()) {
         logger->error("No frontend with name {} found in list! Returned data is nullptr", fe_id);
         return nullptr;
     }
     return getData(feIdMap.at(fe_id), get_all);
 }
+
+std::unique_ptr<std::vector<Event>> VisualizerCli::getEvents(int fe_id, bool get_all) const{
+    if(!(state == CLIstate::NORMAL))
+        return nullptr;
+
+    return loadEvents(fe_id, get_all);
+}
+
+std::unique_ptr<std::vector<Event>> VisualizerCli::getEvents(std::string fe_id, bool get_all) const{
+    if(!(state == CLIstate::NORMAL))
+        return nullptr;
+
+    if(feIdMap.find(fe_id) == feIdMap.end()) {
+        logger->error("No frontend with name {} found in list! Returned data is nullptr", fe_id);
+        return nullptr;
+    }
+    return getEvents(feIdMap.at(fe_id), get_all);
+}
+
+std::unique_ptr<std::vector<ReconstructedBunch>> VisualizerCli::getReconstructedBunch(){
+    numloops++;
+
+    uint8_t totalFEs = clipboards.size();
+    uint32_t largest_bcid = 0;
+    uint32_t smallestTail_bcid = UINT32_MAX;
+    std::vector<std::unique_ptr<EventData>> loadersEventData(totalFEs);
+    std::vector<std::vector<ReconstructedBunch>> loadersReconBunch(totalFEs);
+    
+    bool noEventsOccured = true;
+    for(int i = 0; i < totalFEs; i++){
+        loadersEventData[i] = getRawData(i);
+        if(loadersEventData[i] && !loadersEventData[i]->empty()){
+
+            uint32_t first_bcid = loadersEventData[i]->events.front().bcid;
+            uint32_t last_bcid = loadersEventData[i]->events.back().bcid;
+
+            largest_bcid = std::max(largest_bcid, last_bcid);
+            smallestTail_bcid = std::min(smallestTail_bcid, last_bcid);
+
+            for(uint32_t bcid = first_bcid; bcid <= last_bcid; bcid++){
+                ReconstructedBunch tempBunch(bcid, totalFEs);
+                tempBunch.addEventDataCI(*loadersEventData[i], i); //bcidChangeIndex should be defined in data loaders
+                loadersReconBunch[i].push_back(std::move(tempBunch));
+            }
+
+            noEventsOccured = false;
+        }
+        // if(!temp[i]->empty()){
+        //     std::cout << "ID: " << numloops << " // Loader " << i << " with // front_bcid: " <<  temp[i]->front().bcid << " and back_bcid: " << temp[i]->back().bcid  << "Size: " << temp[i]->size() << std::endl;
+        //     std::cout << " |------------------------> front_hits: " << temp[i]->front().nHits << " and back_hits: " << temp[i]->back().nHits << std::endl;
+        // }
+    }
+    if(noEventsOccured)
+        return nullptr;
+
+    std::cout << "ID: " << numloops << std::endl;
+
+    // std::vector<std::unique_ptr<std::vector<Event>>> temp(totalFEs);
+    // std::cout << "ID: " << numloops << " Here 1\n";
+    // //Determine the overlapped events
+    // for(int i = 0; i < temp.size(); i++){
+    //     temp[i] = loadEvents(i);
+
+    //     if(!temp[i]->empty()){
+    //         largest_bcid = std::max(largest_bcid, temp[i]->back().bcid);
+    //         smallestTail_bcid = std::min(smallestTail_bcid, temp[i]->back().bcid);
+    //         std::cout << "Loader " << i << " with // front_bcid: " <<  temp[i]->front().bcid << " and back_bcid: " << temp[i]->back().bcid  << std::endl;
+    //         noEventsOccured = false;
+    //     }
+    // }
+    // if(noEventsOccured)
+    //     return nullptr;
+
+
+    std::cout << "-----largest_bcid: " << largest_bcid << std::endl;
+    std::cout << "-----smallestTail_bcid:  " << smallestTail_bcid << std::endl; 
+    std::cout << "-----firstuncompleted_bcid: " << firstuncompleted_bcid << std::endl;
+    std::cout << "-----firstuntouched_bcid: " << firstuntouched_bcid << std::endl;
+    
+    std::cout << "ID: " << numloops << " Here 2\n";
+
+    //Initialize new reconstructed events with appropriate bcid
+    uncompletedReconEvents->reserve(smallestTail_bcid - firstuncompleted_bcid + 1);
+    for(uint32_t bcid = firstuntouched_bcid; bcid <= smallestTail_bcid; bcid++){
+        uncompletedReconEvents->push_back(ReconstructedBunch(bcid, totalFEs));
+    }
+
+    std::cout << "ID: " << numloops << " Here 3\n";
+
+    //Fill in completed events to return. Completed evnts are the events with bcid less than the smallest tail bcid.
+    for(int i = 0; i < totalFEs; i++){
+        if(loadersEventData[i] && !loadersEventData[i]->empty()){
+            uint32_t first_bcid = loadersReconBunch[i].front().bcid;
+            size_t globalIndex = first_bcid - firstuncompleted_bcid;
+            for(uint32_t bcid = first_bcid; bcid < smallestTail_bcid; bcid++){
+                size_t index = bcid - first_bcid;
+                (*uncompletedReconEvents)[globalIndex + index].addEventData(*((loadersReconBunch[i])[index].getEventDataFE(i)), i);
+            }
+        }
+    }
+    std::unique_ptr<std::vector<ReconstructedBunch>> reconstructedReturn = std::move(uncompletedReconEvents);
+
+    std::cout << "ID: " << numloops << " Here 4\n";
+
+    //Reset variables to load in the uncompleted events
+    firstuncompleted_bcid = smallestTail_bcid;
+    firstuntouched_bcid = largest_bcid + 1;
+
+    uncompletedReconEvents = std::make_unique<std::vector<ReconstructedBunch>>();
+    uncompletedReconEvents->empty();
+    uncompletedReconEvents->reserve(firstuntouched_bcid - firstuncompleted_bcid + 1);
+    for(uint32_t bcid = firstuncompleted_bcid; bcid < firstuntouched_bcid; bcid++){
+        uncompletedReconEvents->push_back(ReconstructedBunch(bcid, totalFEs));
+    }
+    
+    std::cout << "ID: " << numloops << " Here 5\n";
+
+    std::cout << "Uncompleted Recon Events Size: " << uncompletedReconEvents->size() << std::endl;
+
+    //Fill up uncompletedReconEvents with new uncompleted events
+    for(int i = 0; i < loadersReconBunch.size(); i++){
+        if(loadersEventData[i] && !loadersEventData[i]->empty()){
+            size_t globalIndex = firstuncompleted_bcid - loadersReconBunch[i].front().bcid;
+            std::cout << "global index " << globalIndex << std::endl;
+            std::cout << "front bcid of the " << i << "th loader: " << loadersReconBunch[i].front().bcid << std::endl;
+            std::cout << "back bcid of the " << i << "th loader: " << loadersReconBunch[i].back().bcid << std::endl;
+
+            for(uint32_t bcid = firstuncompleted_bcid; bcid <= loadersReconBunch[i].back().bcid; bcid++){
+                size_t index = bcid - firstuncompleted_bcid;
+
+                std::cout << "Loaders Recon Bunch: " << i << " size: " << loadersReconBunch[i].size() << std::endl;
+                std::cout << "index: " << index << std::endl;
+                (*uncompletedReconEvents)[index].addEventData(*((loadersReconBunch[i])[globalIndex + index].getEventDataFE(i)), i);
+            }
+        }
+    }
+
+    std::cout << "ID: " << numloops << " Here 6\n";
+
+    std::cout << "Actual nHits: " << nHits << std::endl;
+    return std::move(reconstructedReturn);
+}
+

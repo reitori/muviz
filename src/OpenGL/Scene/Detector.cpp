@@ -7,7 +7,7 @@ namespace viz{
         {glm::vec3(1.0f, -1.0f,  1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)},
         {glm::vec3(1.0f,  1.0f,  1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)},
         {glm::vec3(-1.0f,  1.0f,  1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f,0.05f)},
-        // Back Vertices  //Colo
+        // Back Vertices  //Color
         {glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)},
         {glm::vec3(1.0f, -1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)},
         {glm::vec3(1.0f,  1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)},
@@ -51,14 +51,15 @@ namespace viz{
     Detector::Detector(){
         ChipMesh = SimpleMesh(ChipVertices, CubeIndices, true);
         HitMesh = SimpleMesh(HitVertices, CubeIndices, true);
-        m_cli = nullptr;
+        m_cli; 
     }
 
-    void Detector::init(const VisualizerCli& cli){
-        m_cli = &cli;
+    void Detector::init(const std::shared_ptr<VisualizerCli>& cli){
+        m_cli = cli;
 
-        for(int i = 0; i < cli.getSize(); i++) {
-            const json& config = cli.getConfig(i);
+
+        for(int i = 0; i < cli->getTotalFEs(); i++) {
+            const json& config = cli->getConfig(i);
             std::string name = config["name"].get<std::string>();
             std::vector<float> pos = config["position"].get<std::vector<float>>();
             std::vector<float> angle = config["angle"].get<std::vector<float>>();
@@ -86,11 +87,14 @@ namespace viz{
     }
 
     void Detector::update(){
+        if(!m_cli->isRunning())
+            return;
+        
         m_nfe = 0;
         m_size = 0;
 
         std::this_thread::sleep_for(std::chrono::nanoseconds(25));
-        for(int i = 0; i < m_cli->getSize(); i++) {
+        for(int i = 0; i < m_cli->getTotalFEs(); i++) {
             std::unique_ptr<std::vector<pixelHit>> data = m_cli->getData(i, true);
             if(data){
                 glm::vec3 chipScale = m_chips[i].scale;
@@ -98,6 +102,7 @@ namespace viz{
                 Chip* currChip = &m_chips[i];
                 float hitSize = (1.0f / std::min(currChip->maxRows, currChip->maxCols)) * currChip->scale[0];
                 m_size += data->size();
+                nHits += data->size();
                 
                 for(int j = 0; j < data->size(); j++){
                     std::uint16_t row = (*data)[j].row;
@@ -122,6 +127,17 @@ namespace viz{
             }
         }
         HitMesh.setInstances(m_hitTransforms.size(), m_hitTransforms, m_hitColors);
+        std::cout << nHits << std::endl;
+        
+
+        // m_cli->state = CLIstate::RECONSTRUCT;
+        // std::this_thread::sleep_for(std::chrono::nanoseconds(25));
+        // auto test = m_cli->getReconstructedBunch();
+        // for(int i = 0; i < test->size(); i++){
+        //     nHits += (*test)[i].nHits;
+        // }
+        // std::cout << "Detector hits total: " << nHits << std::endl;
+
     }
 
     void Detector::render(const Shader& shader){
@@ -138,7 +154,6 @@ namespace viz{
         std::vector<std::pair<unsigned int, float>> perm(m_chips.size());
         for(int i = 0; i < m_chips.size(); i++){
             perm[i] = std::pair<unsigned int, float>(i, (cam.getProj() * cam.getView() * glm::vec4(m_chips[i].pos, 1.0f)).z);
-            //std::cout << "length of " << i << " chip stored now is" << perm[i].second << std::endl;
         }
         std::sort(perm.begin(), perm.end(), [](std::pair<unsigned int, float>& left, std::pair<unsigned int, float>& right){
             return left.second > right.second;
@@ -150,12 +165,6 @@ namespace viz{
         std::vector<glm::vec4> secondVec = m_chipColors;
         for(int i = 0; i < perm.size(); i++){
             m_chipColors[i] = secondVec[perm[i].first];
-        }
-
-        std::cout << "Here ---" << std::endl;
-        for(int i = 0; i < perm.size(); i++){
-            std::cout << i << ": " << m_chips[perm[i].first].name.c_str() << " perm is: " << perm[i].first << std::endl;
-            
         }
 
         ChipMesh.setInstances(m_chips.size(), m_chipTransforms, m_chipColors);
