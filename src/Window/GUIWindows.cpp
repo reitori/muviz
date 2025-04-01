@@ -116,10 +116,12 @@ namespace viz
                         ImVec2 dir = ImVec2(mousePos.x - m_lastMouse.x, m_lastMouse.y - mousePos.y); //note reversal in y-coordinate is due to glfw coordinate system is from top down
                         glm::vec3 disp = 0.75f * glm::normalize(dir.x * cam->getRight() + dir.y * cam->getUp());
 
+                        
+
                         if(m_RPressed){ //rotate camera
-                            cam->rotate(0.15f * dir.y, 0.15f * dir.x);
+                            cam->rotateAxis(glm::normalize(glm::cross(cam->getFront(), disp)), 0.5f);
                         }else{ //otherwise displace
-                            cam->displace(-disp);
+                            cam->smoothDisplace(-disp, m_renderer->getDelTime());
                         }
 
                         m_renderer->sortTransparentObjects();
@@ -163,7 +165,12 @@ namespace viz
 
     void ManagerWindow::onRender(){
         //ImGui::ColorPicker4("Change Screen", color);
-
+        if(ImGui::Button("Start")){
+            startCLI = true;
+        }else{
+            startCLI = false;
+        }
+        
         std::vector<Chip> chips = m_renderer->getDetector()->getChips();
         for(int i = 0; i < chips.size(); i++){
             ImGui::Separator();
@@ -172,6 +179,8 @@ namespace viz
             ImGui::Text("Position: (%.2f, %.2f, %.2f)", chips[i].pos.x, chips[i].pos.y, chips[i].pos.z);
             ImGui::Text("Hits: %lu", chips[i].hits);
         }
+
+        
     }
 
     void ConsoleWindow::onRender(){

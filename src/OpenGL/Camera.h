@@ -29,8 +29,10 @@ namespace viz{
             void setPos(glm::vec3 pos);
 
             void displace(glm::vec3 disp);
+            void smoothDisplace(glm::vec3 disp, float delTime);
             void setRotation(float rightAngle, float upAngle);
             void rotate(float dispRightAngle, float dispUpAngle); //rotate over an angle
+            void rotateAxis(glm::vec3, float rotAngle); //rotate front of camera about an axis
             void addScroll(float scroll);
 
             void setRotation(float sensitivity) {data.sensitivity = sensitivity; }
@@ -45,6 +47,7 @@ namespace viz{
             glm::mat4 getProj() const;
         private:
             CamData data;
+            float t = 0.0f;
 
             void calcProj() { data.projection = glm::perspective(glm::radians(data.zoom * 45.0f), ((float)data.screenSize.x * data.screenScale.x) / ((float)data.screenSize.y * data.screenScale.y), 0.5f, 500.0f);}
             inline void updateOrientation();
