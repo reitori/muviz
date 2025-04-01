@@ -26,6 +26,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 #Dependencies Subdir
 add_subdirectory(deps/glad/)
 add_subdirectory(deps/imgui/)
+add_subdirectory(deps/stb/)
 
 
 
