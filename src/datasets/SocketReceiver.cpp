@@ -4,7 +4,7 @@
 namespace
 {
     auto logger = logging::make_log("SocketReceiver");
-    bool YarrBinaryFileRegistered =
+    bool SocketSenderRegistered =
       StdDict::registerDataLoader("SocketReceiver",
                                 []() { return std::unique_ptr<DataLoader>(new SocketReceiver());});
 }
@@ -38,7 +38,7 @@ void SocketReceiver::init() {
     run_thread = false;
     is_connected = false;
 
-    connectToServer();
+    connectToServer(true);
 }
 
 
@@ -154,15 +154,15 @@ void SocketReceiver::processPacket(std::vector<uint8_t>& buffer){
     Hit hit;
 
     while(offset < buffer.size()){
-        std::memcpy(&tag, buffer.data() + offset, sizeof(uint32_t)); offset += sizeof(uint32_t);
-        std::memcpy(&l1id, buffer.data() + offset, sizeof(uint16_t)); offset += sizeof(uint16_t);
-        std::memcpy(&bcid, buffer.data() + offset, sizeof(uint16_t)); offset += sizeof(uint16_t);
-        std::memcpy(&nHits, buffer.data() + offset, sizeof(uint16_t)); offset += sizeof(uint16_t);
+        memcpy(&tag, buffer.data() + offset, sizeof(uint32_t)); offset += sizeof(uint32_t);
+        memcpy(&l1id, buffer.data() + offset, sizeof(uint16_t)); offset += sizeof(uint16_t);
+        memcpy(&bcid, buffer.data() + offset, sizeof(uint16_t)); offset += sizeof(uint16_t);
+        memcpy(&nHits, buffer.data() + offset, sizeof(uint16_t)); offset += sizeof(uint16_t);
 
         curEvents->newEvent(tag, l1id, bcid);
 
         for(uint16_t i = 0; i < nHits; i++){
-            std::memcpy(&hit, buffer.data() + offset, sizeof(hit)); offset += sizeof(Hit);
+            memcpy(&hit, buffer.data() + offset, sizeof(hit)); offset += sizeof(Hit);
             curEvents->addHit(hit);
             total_hits++;
         }
@@ -171,7 +171,7 @@ void SocketReceiver::processPacket(std::vector<uint8_t>& buffer){
     packet_counter++;
 }
 
-bool SocketReceiver::connectToServer(bool log = true){
+bool SocketReceiver::connectToServer(bool log){
     int rv;
     struct addrinfo hints, *servinfo, *p;
     memset(&hints, 0, sizeof(hints));
@@ -210,19 +210,19 @@ bool SocketReceiver::connectToServer(bool log = true){
     return true;
 }
 
-const char* SocketReceiver::getIP(int arg_fd) const{
+std::string SocketReceiver::getIP(int arg_fd) const{
     struct sockaddr_storage addr;
     socklen_t addr_len = sizeof(addr);
 
     if (getpeername(arg_fd, (struct sockaddr*)&addr, &addr_len) == -1) {
         logger->debug("Could not get IP of fd {0}", arg_fd);
-        return;
+        return std::string("");
     }
 
     return getIP(addr);
 }
 
-const char* SocketReceiver::getIP(struct sockaddr_storage& addr) const{
+std::string SocketReceiver::getIP(struct sockaddr_storage& addr) const{
     char ipstr[INET6_ADDRSTRLEN];
     if (addr.ss_family == AF_INET) { // IPv4
         struct sockaddr_in *s = (struct sockaddr_in *)&addr;
@@ -232,5 +232,5 @@ const char* SocketReceiver::getIP(struct sockaddr_storage& addr) const{
         inet_ntop(AF_INET6, &s->sin6_addr, ipstr, sizeof ipstr);
     }
 
-    return ipstr;
+    return std::string(ipstr);
 }

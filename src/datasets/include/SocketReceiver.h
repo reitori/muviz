@@ -11,6 +11,7 @@
 
 #include <arpa/inet.h>
 
+#include <cstring>
 #include <vector>
 #include <algorithm>
 
@@ -30,10 +31,10 @@ private:
     bool getPacket(std::vector<uint8_t>& buffer) const;
     void processPacket(std::vector<uint8_t>& buffer);
 
-    bool connectToServer(bool log);
+    bool connectToServer(bool log = true);
 
-    const char* getIP(int arg_fd) const;
-    const char* getIP(struct sockaddr_storage& addr) const;
+    std::string getIP(int arg_fd) const;
+    std::string getIP(struct sockaddr_storage& addr) const;
 
     std::string name, server_ip, port;
     int connections;
