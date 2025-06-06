@@ -55,8 +55,6 @@ namespace viz{
             glm::vec4 m_color;
 
             glm::vec2 lastCursorPos;
-            std::unique_ptr<SimpleMesh> testCube;
-
             double lastTime = 0.0f, delTime = 0.0f;
     };
 }

@@ -288,7 +288,7 @@ std::unique_ptr<std::vector<Event>> VisualizerCli::loadEvents(int fe_id, bool ge
     uint32_t procLoop = 1;
     std::unique_ptr<EventData> proc;
     do {
-        std::cout << "procLoop: " <<  procLoop << std::endl;
+        //std::cout << "procLoop: " <<  procLoop << std::endl;
         procLoop++;
         if(proc) proc.reset();
         proc = getRawData(fe_id);
@@ -363,6 +363,8 @@ std::unique_ptr<std::vector<ReconstructedBunch>> VisualizerCli::getReconstructed
     std::vector<std::unique_ptr<EventData>> loadersEventData(totalFEs);
     std::vector<std::vector<ReconstructedBunch>> loadersReconBunch(totalFEs);
     
+    std::cout << "Here 1\n";
+
     bool noEventsOccured = true;
     for(int i = 0; i < totalFEs; i++){
         loadersEventData[i] = getRawData(i);
@@ -392,6 +394,8 @@ std::unique_ptr<std::vector<ReconstructedBunch>> VisualizerCli::getReconstructed
 
     std::cout << "ID: " << numloops << std::endl;
 
+
+    //FUTURE SELF - THIS WILL BREAK CODE. IT WAS AN EARLIER ATTEMPT
     // std::vector<std::unique_ptr<std::vector<Event>>> temp(totalFEs);
     // std::cout << "ID: " << numloops << " Here 1\n";
     // //Determine the overlapped events
@@ -417,14 +421,13 @@ std::unique_ptr<std::vector<ReconstructedBunch>> VisualizerCli::getReconstructed
     std::cout << "ID: " << numloops << " Here 2\n";
 
     //Initialize new reconstructed events with appropriate bcid
-    uncompletedReconEvents->reserve(smallestTail_bcid - firstuncompleted_bcid + 1);
     for(uint32_t bcid = firstuntouched_bcid; bcid <= smallestTail_bcid; bcid++){
         uncompletedReconEvents->push_back(ReconstructedBunch(bcid, totalFEs));
     }
 
     std::cout << "ID: " << numloops << " Here 3\n";
 
-    //Fill in completed events to return. Completed evnts are the events with bcid less than the smallest tail bcid.
+    //Fill in completed events to return. Completed events are the events with bcid less than the smallest tail bcid.
     for(int i = 0; i < totalFEs; i++){
         if(loadersEventData[i] && !loadersEventData[i]->empty()){
             uint32_t first_bcid = loadersReconBunch[i].front().bcid;
@@ -435,17 +438,20 @@ std::unique_ptr<std::vector<ReconstructedBunch>> VisualizerCli::getReconstructed
             }
         }
     }
-    std::unique_ptr<std::vector<ReconstructedBunch>> reconstructedReturn = std::move(uncompletedReconEvents);
 
+    std::cout << "Here 3.5" << std::endl;
+
+    std::unique_ptr<std::vector<ReconstructedBunch>> reconstructedReturn = std::make_unique<std::vector<ReconstructedBunch>>();
+    if(uncompletedReconEvents->size() > 1){ //if size is 1, then still working on one bcid
+        reconstructedReturn->insert(reconstructedReturn->begin(), uncompletedReconEvents->begin(), uncompletedReconEvents->begin() + (smallestTail_bcid - uncompletedReconEvents->front().bcid));
+        uncompletedReconEvents->erase(uncompletedReconEvents->begin(), uncompletedReconEvents->begin() + (smallestTail_bcid - uncompletedReconEvents->front().bcid));
+    }
     std::cout << "ID: " << numloops << " Here 4\n";
 
     //Reset variables to load in the uncompleted events
     firstuncompleted_bcid = smallestTail_bcid;
     firstuntouched_bcid = largest_bcid + 1;
 
-    uncompletedReconEvents = std::make_unique<std::vector<ReconstructedBunch>>();
-    uncompletedReconEvents->empty();
-    uncompletedReconEvents->reserve(firstuntouched_bcid - firstuncompleted_bcid + 1);
     for(uint32_t bcid = firstuncompleted_bcid; bcid < firstuntouched_bcid; bcid++){
         uncompletedReconEvents->push_back(ReconstructedBunch(bcid, totalFEs));
     }

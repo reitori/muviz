@@ -6,31 +6,26 @@ namespace viz{
         glBindVertexArray(m_VAO);
         
         std::size_t vec4Size = sizeof(glm::vec4);
-        //Note buffers are separated as it is intended that colors will change more frequently than transforms
-        glGenBuffers(1, &m_transformsVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, m_transformsVBO);
 
-        glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
+        glGenBuffers(1, &m_instancesVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, m_instancesVBO);
+
+        glEnableVertexAttribArray(2); //color
+        glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)0);
+        glEnableVertexAttribArray(3); //transform matrix
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)vec4Size);
         glEnableVertexAttribArray(4);
-        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)vec4Size);
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)(2*vec4Size));
         glEnableVertexAttribArray(5);   
-        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2*vec4Size));
+        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)(3*vec4Size));
         glEnableVertexAttribArray(6);
-        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3*vec4Size));
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)(4*vec4Size));
 
-        glVertexAttribDivisor(3, 1);
+        glVertexAttribDivisor(2, 1); //color
+        glVertexAttribDivisor(3, 1); //transform matrix
         glVertexAttribDivisor(4, 1);
         glVertexAttribDivisor(5, 1);
         glVertexAttribDivisor(6, 1);
-
-        glGenBuffers(1, &m_colorsVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, m_colorsVBO);
-
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, vec4Size, (void*)0);
-
-        glVertexAttribDivisor(2, 1);
         
         glGenBuffers(1, &m_VBO);
         glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
@@ -86,62 +81,30 @@ namespace viz{
 
     void SimpleMesh::allocateInstances(std::uint16_t instances){
         glBindVertexArray(m_VAO);
-        glBindBuffer(GL_ARRAY_BUFFER, m_colorsVBO);
-        glBufferData(GL_ARRAY_BUFFER, instances * sizeof(glm::vec4), nullptr, GL_STREAM_DRAW);
-
-        glBindBuffer(GL_ARRAY_BUFFER, m_transformsVBO);
-        glBufferData(GL_ARRAY_BUFFER, instances * sizeof(glm::mat4), nullptr, GL_STREAM_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, m_instancesVBO);
+        glBufferData(GL_ARRAY_BUFFER, instances * sizeof(InstanceData), nullptr, GL_STREAM_DRAW);
 
         glBindVertexArray(0);
     }
 
-    void SimpleMesh::setInstances(std::uint16_t instances, const std::vector<glm::mat4>& transforms, const std::vector<glm::vec4>& colors){
-        m_numInstances = instances;
-        if(transforms.size() != colors.size()){
-            m_appLogger->error("Mesh Instancing: Number of transforms not equal to number of colors.");
-            return;
-        }
+    void SimpleMesh::setInstances(const std::vector<InstanceData>&& instances){
+        m_instancesToRender = instances.size();
         std::size_t vec4Size = sizeof(glm::vec4);
 
-        glBindVertexArray(m_VAO);
-        glBindBuffer(GL_ARRAY_BUFFER, m_colorsVBO);
-        glBufferData(GL_ARRAY_BUFFER, static_cast<GLuint>(instances * sizeof(glm::vec4)), &colors[0], GL_STREAM_DRAW);
+        m_instances = std::move(instances);
+        updateInstances();
+    }
 
-        glBindBuffer(GL_ARRAY_BUFFER, m_transformsVBO);
-        glBufferData(GL_ARRAY_BUFFER, static_cast<GLuint>(instances * sizeof(glm::mat4)), transforms.data(), GL_STREAM_DRAW);
+    void SimpleMesh::updateInstances(){
+        m_instancesToRender = m_instances.size();
+
+        glBindVertexArray(m_VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, m_instancesVBO);
+        glBufferData(GL_ARRAY_BUFFER, static_cast<GLuint>(m_instancesToRender * sizeof(InstanceData)), NULL, GL_STREAM_DRAW);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, static_cast<GLuint>(m_instancesToRender * sizeof(InstanceData)), m_instances.data());
 
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-    }
-
-    void SimpleMesh::setInstanceTransforms(const std::vector<glm::mat4>& transforms){
-        if(transforms.size() != m_numInstances){
-            m_appLogger->error("Mesh Instancing: Internal number of instances does not match provided number of transforms");
-            return;
-        }
-
-        glBindVertexArray(m_VAO);
-
-        glBindBuffer(GL_ARRAY_BUFFER, m_transformsVBO);
-        glBufferData(GL_ARRAY_BUFFER, m_numInstances * sizeof(glm::mat4), &transforms[0], GL_STREAM_DRAW);
-
-        glBindVertexArray(0);
-    }
-
-    void SimpleMesh::setInstanceColors(const std::vector<glm::vec4>& colors){
-        if(colors.size() != m_numInstances){
-            m_appLogger->error("Mesh Instancing: Internal number of instances does not match provided number of colors");
-            return;
-        }
-
-        glBindVertexArray(m_VAO);
-        std::size_t vec4Size = sizeof(glm::vec4);
-
-        glBindVertexArray(m_VAO);
-        glBindBuffer(GL_ARRAY_BUFFER, m_colorsVBO);
-        glBufferData(GL_ARRAY_BUFFER, m_numInstances * sizeof(glm::vec4), &colors[0], GL_STREAM_DRAW);
-
-        glBindVertexArray(0);
     }
     
     void SimpleMesh::render(const Shader& shader) const {
@@ -152,7 +115,7 @@ namespace viz{
             glDrawElements(GL_TRIANGLES, static_cast<GLuint>(m_indices.size()), GL_UNSIGNED_INT, (GLvoid*)0);
         }else{
             shader.setBool("uIsInstanced", true);
-            glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLuint>(m_indices.size()), GL_UNSIGNED_INT, (GLvoid*)0, m_numInstances);
+            glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLuint>(m_indices.size()), GL_UNSIGNED_INT, (GLvoid*)0, m_instancesToRender);
         }
         glBindVertexArray(0);
         return;

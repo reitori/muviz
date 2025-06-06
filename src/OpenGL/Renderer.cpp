@@ -48,8 +48,6 @@ namespace viz{
         m_framebuffer = std::make_unique<Framebuffer>(width, height);
         m_detector = std::make_unique<Detector>();
 
-        testCube = std::make_unique<SimpleMesh>(ChipVertices, CubeIndices, true);
-
         m_framebuffer->bind();
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
