@@ -5,6 +5,7 @@ ADD_EXTERNAL_DEPS()
 add_library(VisualizerLib SHARED
     datasets/YarrBinaryFile.cpp
     datasets/SocketReceiver.cpp
+    datasets/SocketSubscriber.cpp
     datasets/AllDataLoaders.cpp
     util/include/json.hpp
     util/include/util.hpp
@@ -15,7 +16,7 @@ add_library(VisualizerLib SHARED
     util/mathtools.cpp
 )
 
-target_link_libraries(VisualizerLib PUBLIC pthread rt glfw glad imgui glm stb)
+target_link_libraries(VisualizerLib PUBLIC pthread rt glfw glad imgui glm stb libzmq)
 target_include_directories(VisualizerLib PUBLIC ${PROJECT_SOURCE_DIR}/src)
 target_include_directories(VisualizerLib PUBLIC datasets/include)
 target_include_directories(VisualizerLib PUBLIC util/include)
@@ -26,7 +27,7 @@ add_executable(test
 )
 
 target_include_directories(test PUBLIC ${PROJECT_SOURCE_DIR}/src)
-target_link_libraries(test VisualizerLib pthread rt glfw glad imgui glm stb)
+target_link_libraries(test VisualizerLib)
 
 set_target_properties(test 
     PROPERTIES 
@@ -51,7 +52,7 @@ add_executable(main
 )
 
 target_include_directories(main PUBLIC ${PROJECT_SOURCE_DIR}/src)
-target_link_libraries(main VisualizerLib pthread rt glfw glad imgui glm stb)
+target_link_libraries(main VisualizerLib)
 
 set_target_properties(main 
     PROPERTIES 

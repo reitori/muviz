@@ -33,4 +33,31 @@ function(ADD_EXTERNAL_DEPS )
     FetchContent_MakeAvailable(glm)
     include_directories(${CMAKE_CURRENT_BINARY_DIR}/../_deps/glm-src/glm)
 
+    #libzmq
+    set(ZMQ_BUILD_TESTS    OFF CACHE BOOL "Turn off libzmq build tests.")
+    set(ZMQ_BUILD_EXAMPLES OFF CACHE BOOL "Turn off libzmq build examples.")
+    set(WITH_PERF_TOOL     OFF CACHE BOOL "Turn off libzmq performance tools.")
+    FetchContent_Declare(
+    libzmq
+    GIT_REPOSITORY https://github.com/zeromq/libzmq.git
+    GIT_TAG        v4.3.0
+    )
+    FetchContent_MakeAvailable(libzmq)
+    foreach(target_name libzmq libzmq-static libzmq-shared)
+        if(TARGET ${target_name})
+            target_compile_options(${target_name} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wno-non-virtual-dtor>
+            $<$<COMPILE_LANGUAGE:CXX>:-Wno-tautological-constant-compare>)
+        endif()
+    endforeach()
+
+    #cppzmq (C++ binding)
+    set(CPPZMQ_BUILD_TESTS     OFF CACHE BOOL "Turn off cppzmq build tests.")
+    set(CPPZMQ_BUILD_EXMAMPLES OFF CACHE BOOL "Turn off cppzmq build tests.")
+    FetchContent_Declare(
+    cppzmq
+    GIT_REPOSITORY https://github.com/zeromq/cppzmq.git
+    GIT_TAG        v4.10.0
+    )
+    FetchContent_MakeAvailable(cppzmq)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR}/../_deps/cppzmq-src)
 endfunction()

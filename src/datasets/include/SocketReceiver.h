@@ -43,9 +43,9 @@ private:
     bool run_thread, is_connected, socket_created;
     int fd;
 
+    uint32_t totalEvents = 0;
     uint8_t max_connection_retries, current_retry;
     std::unique_ptr<EventData> curEvents;
-    Event thisEvent;
 };
 
 #endif

@@ -180,7 +180,7 @@ class ReconstructedBunch{
 class DataLoader{
     public:
         DataLoader() = default;
-        ~DataLoader() = default;
+        virtual ~DataLoader() = default;
         virtual void init() = 0;
         virtual void configure(const json &arg_config) {}; // defined by default
         virtual void connect(std::shared_ptr<ClipBoard<EventData> > arg_output)  {

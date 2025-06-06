@@ -4,12 +4,13 @@
 namespace
 {
     auto logger = logging::make_log("SocketReceiver");
-    bool SocketSenderRegistered =
+    bool SocketReceiverRegistered =
       StdDict::registerDataLoader("SocketReceiver",
                                 []() { return std::unique_ptr<DataLoader>(new SocketReceiver());});
 }
 
 SocketReceiver::SocketReceiver() {
+    totalEvents = 0;
     total_events = 0;
     total_hits = 0;
     current_retry = 0;
@@ -91,6 +92,20 @@ void SocketReceiver::process(){
                 continue;
             }
             processPacket(rawbytes);
+
+            now = std::chrono::steady_clock::now();
+                if(curEvents->size() > 0) {
+                    auto diff = ((float)std::chrono::duration_cast<std::chrono::microseconds>(now - last).count())/1000000;
+                    logger->debug(
+                        "[{}] Packet {}: {} events in {} seconds = {} ev/s", 
+                        name, batch_n, curEvents->size(), diff, curEvents->size()/diff
+                    );
+                    // Push data and make new block of events
+                    output->pushData(std::move(curEvents));
+                    curEvents = std::make_unique<EventData>();
+                    batch_n++;
+                }
+            last = std::chrono::steady_clock::now();
         }else{ //retry connection
             if(current_retry < max_connection_retries){
                 connectToServer(false);
@@ -106,20 +121,6 @@ void SocketReceiver::process(){
             logger->info("{0} had too many failed connections. Closing port.", name);
             run_thread = false; //too many retries
         }
-        now = std::chrono::steady_clock::now();
-        if(curEvents->size() > 0) {
-            auto diff = ((float)std::chrono::duration_cast<std::chrono::microseconds>(now - last).count())/1000000;
-            logger->debug(
-                "[{}] Packet {}: {} events in {} seconds = {} ev/s", 
-                name, batch_n, curEvents->size(), diff, curEvents->size()/diff
-            );
-            // Push data and make new block of events
-            output->pushData(std::move(curEvents));
-            curEvents = std::make_unique<EventData>();
-
-            batch_n++;
-        }
-        last = std::chrono::steady_clock::now();
     }
 }
 
@@ -132,6 +133,7 @@ bool SocketReceiver::getPacket(std::vector<uint8_t>& buffer) const{
         if (result <= 0) return false;
         bytesRead += result;
     }
+    logger->info("received packet of size {0}", packetSize);
 
     packetSize = ntohl(packetSize);
     size_t offset = buffer.size();
@@ -160,6 +162,8 @@ void SocketReceiver::processPacket(std::vector<uint8_t>& buffer){
         memcpy(&nHits, buffer.data() + offset, sizeof(uint16_t)); offset += sizeof(uint16_t);
 
         curEvents->newEvent(tag, l1id, bcid);
+        totalEvents++;
+        //logger->info("Event received l1id: {0}", bcid);
 
         for(uint16_t i = 0; i < nHits; i++){
             memcpy(&hit, buffer.data() + offset, sizeof(hit)); offset += sizeof(Hit);
