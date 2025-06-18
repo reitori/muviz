@@ -22,6 +22,11 @@ struct Hit {
     uint16_t tot : 16;
 };
 
+struct pixelHit {
+    uint16_t row;
+    uint16_t col;
+};
+
 class Event {
     public:
         Event() {

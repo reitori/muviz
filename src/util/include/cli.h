@@ -36,11 +36,6 @@ namespace cli_helpers {
     void setupLoggers(bool verbose);
 }
 
-struct pixelHit {
-    uint16_t row;
-    uint16_t col;
-};
-
 enum CLIstate {
     //User gets ownership of any chip events
     //No reconstruction of events is done by the CLI.
