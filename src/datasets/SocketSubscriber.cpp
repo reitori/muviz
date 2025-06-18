@@ -128,7 +128,7 @@ bool SocketSubscriber::getPacket(std::vector<uint8_t>& buffer) const {
         zmq::message_t msg;
         subscriber->recv(msg, zmq::recv_flags::none);
         size_t sz = msg.size();
-        logger->debug("received packet of size {}", sz);
+        logger->debug("Received packet of size {}", sz);
         buffer.resize(sz);
         std::memcpy(buffer.data(), msg.data(), sz);
         return true;
