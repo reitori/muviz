@@ -1,11 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
 
-#Required packages
-find_package(Git REQUIRED)
-find_package(OpenGL REQUIRED)
-include_directories(${OPENGL_INCLUDE_DIR})
-include(cmake/CMakeLists.txt.external)
-
 project(Visualizer VERSION 1.0.0)
 set(RUNTIME_INSTALL_AREA "${PROJECT_SOURCE_DIR}/bin")
 
@@ -27,11 +21,19 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+#Ensure that GLVND Libraries are included over legacy
+cmake_policy (SET CMP0072 NEW)
+
+#Required packages
+find_package(Git REQUIRED)
+find_package(OpenGL REQUIRED)
+include_directories(${OPENGL_INCLUDE_DIR})
+include(cmake/CMakeLists.txt.external)
+
 #Dependencies Subdir
 add_subdirectory(deps/glad/)
 add_subdirectory(deps/imgui/)
 add_subdirectory(deps/stb/)
-add_subdirectory(deps/corryvreckan/)
 
 #Application subdir
 add_subdirectory(src)
@@ -42,6 +44,4 @@ add_subdirectory(src)
 set(ASSETS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/assets")
 set(ASSETS_BINARY_DIR "${CMAKE_BINARY_DIR}/assets")
 file(COPY ${ASSETS_SOURCE_DIR} DESTINATION "${CMAKE_BINARY_DIR}/assets")
-
-cmake_policy (SET CMP0072 OLD)
 
