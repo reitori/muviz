@@ -1,4 +1,4 @@
-#include "Camera.h"
+#include "OpenGL/Camera.h"
 
 namespace viz{
     Camera::Camera(){
