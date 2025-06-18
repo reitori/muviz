@@ -1,6 +1,6 @@
 #include "Application.h"
 
-std::shared_ptr<spdlog::logger> viz::m_appLogger = logging::make_log("Visualizer CLI");
+std::shared_ptr<spdlog::logger> viz::m_appLogger = logging::make_log("Visualizer");
 
 namespace viz
 {
@@ -25,8 +25,10 @@ namespace viz
     }  
 
     void Application::init(){
+        ShaderManager::loadShaders();
+
         m_detector = std::make_unique<Detector>();
-        m_renderer = std::make_unique<Renderer>(0,0);
+        m_renderer = std::make_unique<Renderer>(1,1); //arbitrary width/height, automatically resized upon load of application
 
         m_detector->init(m_cli);
         m_renderer->attachDetector(m_detector);
@@ -72,9 +74,10 @@ namespace viz
 
                 const ManagerWindow* manager = dynamic_cast<ManagerWindow*>(m_GUIWindows[3].get());
                 m_renderer->setColor(glm::vec4(manager->color[0], manager->color[1], manager->color[2], manager->color[3]));
-
                 if(manager->startCLI)
                     m_cli->start();
+                
+                m_detector->updateHitDurations(manager->hitDuration);
 
                 m_renderer->render();
                 m_appWin->render();
@@ -111,11 +114,11 @@ namespace viz
         glfwSetErrorCallback(Application::GLFWErrorCallback);
         if(!glfwInit()){ 
             coreInit = false;
-            m_appLogger->error("GLFW initialization failed");
+            m_appLogger->error("GLFW initialization failed!");
             glfwTerminate();
         }
         else{
-            m_appLogger->info("GLFW Initialized");
+            m_appLogger->info("GLFW Initialized!");
             if(fullscreen){
                 width = glfwGetVideoMode(glfwGetPrimaryMonitor())->width;
                 height = glfwGetVideoMode(glfwGetPrimaryMonitor())->height;
@@ -124,7 +127,7 @@ namespace viz
             m_appWin = std::make_unique<glWindow>("Visualizer", width, height);
             if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
                 coreInit = false;
-                m_appLogger->error("Failed to initailize GLAD");
+                m_appLogger->error("Failed to initailize GLAD!");
                 glfwTerminate();
             }
 
@@ -134,7 +137,6 @@ namespace viz
     }
 
     void Application::imGuiInit(){
-        m_appLogger->info("{0} IS what core init is set to ", coreInit);
         if(coreInit){
             IMGUI_CHECKVERSION();
             ImGui::CreateContext();
