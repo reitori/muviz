@@ -1,10 +1,10 @@
 #include "OpenGL/Scene/Detector.h"
 
-#include <random>
-
 namespace {
-    auto log = logging::make_log("Detector");
+    auto logger = logging::make_log("Detector");
 }
+
+//TODO: Move matrix computations to GPU. Main bottleneck right now is the amount of CPU computation for particle rendering.
 
 namespace viz{
     std::vector<SimpleVertex> CubeVertices = {
@@ -18,19 +18,6 @@ namespace viz{
         {glm::vec3(1.0f, -1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)},
         {glm::vec3(1.0f,  1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)},
         {glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)}
-    };
-
-    std::vector<SimpleVertex> HitVertices = {
-        // Front Vertices //Color
-        {glm::vec3(-1.0f, -1.0f,  1.0f), glm::vec4(1.0f, 0.2509f, 0.0235f, 0.95f)},
-        {glm::vec3(1.0f, -1.0f,  1.0f), glm::vec4(1.0f, 0.2509f, 0.0235f, 0.95f)},
-        {glm::vec3(1.0f,  1.0f,  1.0f), glm::vec4(1.0f, 0.2509f, 0.0235f, 0.95f)},
-        {glm::vec3(-1.0f,  1.0f,  1.0f), glm::vec4(1.0f, 0.2509f, 0.0235f, 0.95f)},
-        // Back Vertices  //Color
-        {glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec4(1.0f, 0.2509f, 0.0235f, 0.95f)},
-        {glm::vec3(1.0f, -1.0f, -1.0f), glm::vec4(1.0f, 0.2509f, 0.0235f, 0.95f)},
-        {glm::vec3(1.0f,  1.0f, -1.0f), glm::vec4(1.0f, 0.2509f, 0.0235f, 0.95f)},
-        {glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec4(1.0f, 0.2509f, 0.0235f, 0.95f)}
     };
 
     std::vector<GLuint> CubeIndices = {
@@ -56,7 +43,7 @@ namespace viz{
     
     Detector::Detector(){
         CubeMesh = SimpleMesh(CubeVertices, CubeIndices, true);
-        ParticlesContainer.resize(10000);
+        ParticlesContainer.resize(totalParticles);
         m_cli; 
     }
 
@@ -71,39 +58,35 @@ namespace viz{
             std::vector<float> size = config["size"].get<std::vector<float>>();
             std::vector<float> rowcol = config["rowcol"].get<std::vector<float>>();
 
-            Chip tempChip;
-            tempChip.name = name;
-            tempChip.fe_id = i;
-            tempChip.pos = glm::vec3(pos[0], pos[1], pos[2]);
-            tempChip.eulerRot = glm::vec3(angle[0], angle[1], angle[2]);
-            tempChip.scale = glm::vec3(size[0] / 2.0f, size[1] / 2.0f, size[2] / 2.0f);
-            tempChip.maxRows = rowcol[0]; tempChip.maxCols = rowcol[1];
-            tempChip.hits = 0;
+            m_chips.emplace_back(true, rowcol[1], rowcol[0]);
+            auto& currChip = m_chips.back();
 
-            glm::mat4 tempTfm = transform(tempChip.scale, tempChip.eulerRot, tempChip.pos, false);
-            
-            m_chips.push_back(tempChip);
+            currChip.name = name;
+            currChip.fe_id = i;
+            currChip.pos = glm::vec3(pos[0], pos[1], pos[2]);
+            currChip.eulerRot = glm::vec3(angle[0], angle[1], angle[2]);
+            currChip.scale = glm::vec3(size[0] / 2.0f, size[1] / 2.0f, size[2] / 2.0f);
+            currChip.hits = 0;
+
+            glm::mat4 tempTfm = transform(currChip.scale, currChip.eulerRot, currChip.pos, false);
             
             Particle tempPart;
-            tempPart.pos = tempChip.pos;
+            tempPart.pos = currChip.pos;
             tempPart.transform = tempTfm;
             tempPart.color = glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.25f);
             tempPart.is_immortal = true;
             tempPart.lifetime = 100.0f;
             tempPart.ndcDepth = 0.0f;
-            ParticlesContainer[FindUnusedParticle()] = tempPart;
+            ParticlesContainer[findUnusedParticle()] = tempPart;
         };
         
-        m_appLogger->info("Detector initialized with {0} chips", m_chips.size());
+        logger->info("Detector initialized with {0} chips", m_chips.size());
     }
 
-    void Detector::update(const Camera& cam, float dTime){
+    void Detector::update(const Camera& cam, const float& dTime){
         if(!m_cli->isRunning())
             return;
         
-        m_nfe = 0;
-        m_size = 0;
-
         std::this_thread::sleep_for(std::chrono::nanoseconds(25));
         for(int i = 0; i < m_cli->getTotalFEs(); i++) {
             std::unique_ptr<std::vector<pixelHit>> data = m_cli->getData(i, true);
@@ -112,9 +95,10 @@ namespace viz{
 
                 Chip* currChip = &m_chips[i];
                 float hitSize = (1.0f / std::min(currChip->maxRows, currChip->maxCols)) * currChip->scale[0];
-                m_size += data->size();
-                nHits += data->size();
+                nHitsThisFrame += data->size();
                 
+                currChip->updateHitMap(*data);
+
                 for(int j = 0; j < data->size(); j++){
                     std::uint16_t row = (*data)[j].row;
                     std::uint16_t col = (*data)[j].col;
@@ -122,20 +106,19 @@ namespace viz{
                     if(row > m_chips[i].maxRows || col > m_chips[i].maxCols)
                         break;
                     
-                    float diffx = (2.0f * ((float)row / (float)currChip->maxRows) - 1.0f) * currChip->scale[0];
-                    float diffy = (2.0f * ((float)col / (float)currChip->maxCols) - 1.0f) * currChip->scale[1];
-                    glm::vec3 posRelToChip =  glm::vec3(diffx, diffy, 0.0f);
+                    float diffx = (2.0f * (((float)row + 0.5f) / (float)currChip->maxRows) - 1.0f) * currChip->scale[0];
+                    float diffy = (2.0f * (((float)col + 0.5f) / (float)currChip->maxCols) - 1.0f) * currChip->scale[1];
+                    glm::vec3 posRelToChip = glm::vec3(diffx, diffy, 0.0f);
                     glm::vec3 pos = currChip->pos + glm::toMat3(glm::quat(glm::vec3(viz_TO_RADIANS(currChip->eulerRot[0]), viz_TO_RADIANS(currChip->eulerRot[1]), viz_TO_RADIANS(currChip->eulerRot[2])))) * posRelToChip; //this could probably be optimized for later
 
-                    //CubeMesh.m_instances.emplace_back(defaultHitColor, transform(glm::vec3(hitSize, hitSize, currChip->scale[2] + 0.1f), currChip->eulerRot, pos));
                     Particle tempPart;
                     tempPart.pos = pos;
                     tempPart.transform = transform(glm::vec3(hitSize, hitSize, currChip->scale[2] + 0.1f), currChip->eulerRot, pos);
                     tempPart.color = glm::vec4(defaultHitColor, 1.0f);
                     tempPart.is_immortal = false;
-                    tempPart.lifetime = particleLifetime;
+                    tempPart.lifetime = hitDuration;
                     tempPart.ndcDepth = 0.0f;
-                    ParticlesContainer[FindUnusedParticle()] = tempPart;
+                    ParticlesContainer[findUnusedParticle()] = tempPart;
 
                     currChip->hits += 1;
 
@@ -144,17 +127,45 @@ namespace viz{
                 }
 
                 data.reset();
-                m_nfe++;
             }
         }
-        //CubeMesh.updateInstances();
         
+        updateParticles(cam, dTime);
+
+        // m_cli->state = CLIstate::RECONSTRUCT;
+        // std::this_thread::sleep_for(std::chrono::nanoseconds(25));
+        // auto test = m_cli->getReconstructedBunch();
+        // for(int i = 0; i < test->size(); i++){
+        //     nHits += (*test)[i].nHits;
+        // }
+        // std::cout << "Detector hits total: " << nHits << std::endl;
+
+    }
+
+    void Detector::updateHitDurations(float dur){
+        hitDuration = dur;
+        for(int i = 0; i < ParticlesContainer.size(); i++){
+            if(ParticlesContainer[i].lifetime > dur)
+                ParticlesContainer[i].lifetime = dur;
+        }
+    }
+
+    void Detector::render(const Shader& shader){
+        glEnable(GL_BLEND);
+        glDepthMask(GL_FALSE);
+        CubeMesh.render(shader);
+        glDepthMask(GL_TRUE);
+        glDisable(GL_BLEND);
+    }
+
+    void Detector::updateParticles(const Camera& cam, const float& dTime){
+        logger->info("Total particles being rendered: {0}", CubeMesh.m_instances.size());
         CubeMesh.m_instances.clear();
         for(int i = 0; i < ParticlesContainer.size(); i++){
             Particle& p = ParticlesContainer[i];
 
             if(!p.is_immortal){
-                if(p.lifetime > 0.0f);{
+                if(p.lifetime > 0.0f){
                     p.lifetime -= dTime;
                     if(p.lifetime > 0.0f){
                         glm::vec4 clip = cam.getProj() * cam.getView() * glm::vec4(p.pos, 1.0f);
@@ -163,8 +174,8 @@ namespace viz{
 
                         InstanceData data;
                         data.transform = p.transform;
-                        float ratio = p.lifetime / particleLifetime;
-                        data.color = glm::vec4((1 - ratio), ratio, 0, p.lifetime / particleLifetime);
+                        float ratio = p.lifetime / hitDuration;
+                        data.color = glm::vec4((1 - ratio), ratio, 0, p.lifetime / hitDuration);
 
                         CubeMesh.m_instances.push_back(data);
                     }
@@ -183,28 +194,13 @@ namespace viz{
                 CubeMesh.m_instances.push_back(data);
             }
         }
-        std::cout << ParticlesContainer[900].lifetime << std::endl;
         CubeMesh.updateInstances();
-
-        // m_cli->state = CLIstate::RECONSTRUCT;
-        // std::this_thread::sleep_for(std::chrono::nanoseconds(25));
-        // auto test = m_cli->getReconstructedBunch();
-        // for(int i = 0; i < test->size(); i++){
-        //     nHits += (*test)[i].nHits;
-        // }
-        // std::cout << "Detector hits total: " << nHits << std::endl;
-
     }
 
-    void Detector::render(const Shader& shader){
-        glEnable(GL_BLEND);
-        glDepthMask(GL_FALSE);
-        CubeMesh.render(shader);
-        glDepthMask(GL_TRUE);
-    }
-
-    int Detector::FindUnusedParticle(){
-        for(int i=LastUsedParticle; i < 10000; i++){
+    int Detector::findUnusedParticle(){
+        //When not sorted, next available particle should be one after the last used particle
+        //Unused particles have ndcDepth <= -1.0f, will accumulate at the end of list when sorted in sortTransparent
+        for(int i=LastUsedParticle; i < totalParticles; i++){
             if (ParticlesContainer[i].lifetime <= 0.0f && !ParticlesContainer[i].is_immortal){
                     LastUsedParticle = i;
                     return i;
@@ -218,40 +214,19 @@ namespace viz{
             }
         }
 
-        for(int i = 0; i < 10000; i++){
+        for(int i = 0; i < totalParticles; i++){
             if(!ParticlesContainer[i].is_immortal)
                 return i;
         }
+
+        return -1;
     }
 
     void Detector::sortTransparent(const Camera& cam){
-        std::sort(ParticlesContainer.begin(), ParticlesContainer.end(), [](Particle& left, Particle& right){
-            return left.ndcDepth > right.ndcDepth;
-        });
-
+        // std::sort(ParticlesContainer.begin(), ParticlesContainer.end(), [](Particle& left, Particle& right){
+        //     return left.ndcDepth > right.ndcDepth;
+        // });
     }
-
-    // void Detector::sortTransparent(const Camera& cam){
-    //     std::vector<std::pair<unsigned int, float>> perm(m_chips.size());
-    //     for(int i = 0; i < m_chips.size(); i++){
-    //         glm::vec4 clip = cam.getProj() * cam.getView() * glm::vec4(m_chips[i].pos, 1.0f);
-    //         float ndcDepth = clip.z / clip.w;
-    //         perm[i] = std::make_pair(i, ndcDepth);
-    //     }
-    //     std::sort(perm.begin(), perm.end(), [](std::pair<unsigned int, float>& left, std::pair<unsigned int, float>& right){
-    //         return left.second > right.second;
-    //     });
-    //     std::vector<glm::mat4> secondMat = m_chipTransforms;
-    //     for(int i = 0; i < perm.size(); i++){
-    //         m_chipTransforms[i] = secondMat[perm[i].first];
-    //     }
-    //     std::vector<glm::vec4> secondVec = m_chipColors;
-    //     for(int i = 0; i < perm.size(); i++){
-    //         m_chipColors[i] = secondVec[perm[i].first];
-    //     }
-
-    //     ChipMesh.setInstances(m_chips.size(), m_chipTransforms, m_chipColors);
-    // }
 
     glm::mat4 Detector::transform(glm::vec3 scale, glm::vec3 eulerRot, glm::vec3 pos, bool isInRadians){
         glm::mat4 tempTfm = glm::mat4(1.0f);

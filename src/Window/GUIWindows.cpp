@@ -1,5 +1,12 @@
 #include "GUIWindows.h"
 
+namespace{
+    auto sceneLogger = logging::make_log("SceneWindow");
+    auto dockspaceLogger = logging::make_log("DockspaceLogger");
+    auto managerLogger = logging::make_log("ManagerLogger");
+    auto consoleLogger = logging::make_log("ConsoleLogger");
+}
+
 namespace viz
 {
     void Dockspace::init(){
@@ -37,7 +44,7 @@ namespace viz
             ImGui::DockBuilderFinish(dockspace_id);
         ImGui::End();
 
-        m_appLogger->info("Dockspace initialized");
+        dockspaceLogger->info("Dockspace initialized");
     }
 
     void Dockspace::onRender(){
@@ -116,8 +123,6 @@ namespace viz
                         ImVec2 dir = ImVec2(mousePos.x - m_lastMouse.x, m_lastMouse.y - mousePos.y); //note reversal in y-coordinate is due to glfw coordinate system is from top down
                         glm::vec3 disp = 0.75f * glm::normalize(dir.x * cam->getRight() + dir.y * cam->getUp());
 
-                        
-
                         if(m_RPressed){ //rotate camera
                             cam->rotateAxis(glm::normalize(glm::cross(cam->getFront(), disp)), 0.5f);
                         }else{ //otherwise displace
@@ -170,14 +175,20 @@ namespace viz
         }else{
             startCLI = false;
         }
+
+        ImGui::SliderFloat("Hit Duration", &hitDuration, 0.5f, 25.0f);
         
-        std::vector<Chip> chips = m_renderer->getDetector()->getChips();
+        std::vector<Chip>& chips = m_renderer->getDetector()->getChips();
         for(int i = 0; i < chips.size(); i++){
             ImGui::Separator();
             ImGui::Text("Name: %s", chips[i].name.c_str());
             ImGui::Text("fe_id: %i", chips[i].fe_id);
             ImGui::Text("Position: (%.2f, %.2f, %.2f)", chips[i].pos.x, chips[i].pos.y, chips[i].pos.z);
             ImGui::Text("Hits: %lu", chips[i].hits);
+
+            if(chips[i].isHitMapEnabled()){
+                ImGui::Image((intptr_t)chips[i].getTexture()->getID(), ImVec2(chips[i].getMaxCols(), chips[i].getMaxRows()));
+            }
         }
 
         
