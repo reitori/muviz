@@ -30,13 +30,11 @@ namespace viz
 
         m_detector->init(m_cli);
         m_renderer->attachDetector(m_detector);
-        m_cli.start();
 
         m_GUIWindows.push_back(std::make_unique<Dockspace>("MainDock", ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking));
         m_GUIWindows.push_back(std::make_unique<SceneWindow>("Scene", m_renderer));
         m_GUIWindows.push_back(std::make_unique<ConsoleWindow>("Console"));
         m_GUIWindows.push_back(std::make_unique<ManagerWindow>("Manager", m_renderer));
-        m_GUIWindows.push_back(std::make_unique<SceneWindow>("SceneTwo", m_renderer));
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -56,7 +54,8 @@ namespace viz
             while(!m_appWin->windowShouldClose()){
                 currTime = glfwGetTime();
                 ConsoleWindow* console = dynamic_cast<ConsoleWindow*>(m_GUIWindows[2].get());
-                console->fps = 1.0f/(currTime - lastTime);
+                float dTime = currTime - lastTime;
+                console->fps = 1.0f/dTime;
                 lastTime = currTime;
 
                 ImGui_ImplOpenGL3_NewFrame();
@@ -69,10 +68,13 @@ namespace viz
                 ImGui::Render();
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-                m_detector->update();
+                m_detector->update(*m_renderer->getCamera(), dTime);
 
                 const ManagerWindow* manager = dynamic_cast<ManagerWindow*>(m_GUIWindows[3].get());
                 m_renderer->setColor(glm::vec4(manager->color[0], manager->color[1], manager->color[2], manager->color[3]));
+
+                if(manager->startCLI)
+                    m_cli->start();
 
                 m_renderer->render();
                 m_appWin->render();
@@ -95,8 +97,9 @@ namespace viz
     void Application::cliInit(int& argc, char**& argv){
         int cli_status;
 
-        cli_status = m_cli.init(argc, argv); 
-        cli_status = m_cli.configure(); 
+        m_cli = std::make_unique<VisualizerCli>();
+        cli_status = m_cli->init(argc, argv); 
+        cli_status = m_cli->configure(); 
 
         if(cli_status < 0){
             m_appLogger->error("CLI Error Code: {}", cli_status);

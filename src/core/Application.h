@@ -23,12 +23,12 @@
 
 /*
 TODO:
- - Camera rotatable ->
+ + Camera rotatable ->
  - Shading / marker around edges of chips to delinate between them
  - Testing realtime operation
  - Make hit size configurable (w/l), and make them visible on both sides of the chip
  - X/Y/Z axis indicator
- - If you can make chips semi-transparent?
+ + If you can make chips semi-transparent?
  - Room shape thing?
  - Clickable chips?
  - CAD models?
@@ -59,8 +59,8 @@ namespace viz{
             bool coreInit; //At some point maybe change this to bit flags indicating which API's are initialized ex: 011 logger init true, glfw init true, glad init true
             static void GLFWErrorCallback(int err, const char* message){ m_appLogger->error("GLFW Code {0}: {1}", err, message); } // Should be for the glfw window to handle
 
-            VisualizerCli m_cli;
             std::unique_ptr<glWindow> m_appWin;
+            std::shared_ptr<VisualizerCli> m_cli;
             std::shared_ptr<Detector> m_detector;
             std::shared_ptr<Renderer> m_renderer;
             std::vector<std::unique_ptr<GUIWindow>> m_GUIWindows;      

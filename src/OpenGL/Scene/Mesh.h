@@ -5,9 +5,14 @@
 #include "OpenGL/Shader.h"
 #include <glm/glm.hpp>
 //TODO: Abstract away SimpleMesh and NormalMesh to general Mesh class.
-//      
+//TODO: Allocate a maximum instances count; use glSubBufferData rather than glBufferData in SimpleMesh (this should optimize rendering)
 
 namespace viz{
+    struct InstanceData{
+        glm::vec4 color;
+        glm::mat4 transform;
+    };
+
     struct SimpleVertex{
         glm::vec3 pos;
         glm::vec4 color;
@@ -22,39 +27,36 @@ namespace viz{
         glm::vec2 texCoord;
     };
 
-    enum VERTEX_TYPE{
-        SIMPLE,
-        NORMAL
-    };
-
     class SimpleMesh{
         public:
             SimpleMesh() = default;
             SimpleMesh(const std::vector<SimpleVertex>& vertices, const std::vector<GLuint>& indices, bool isInstancedRendered);
             void setData(const std::vector<SimpleVertex>& vertices, const std::vector<GLuint>& indices, bool isInstancedRendered);
 
+            //Allocate instances and pass data to graphics pipeline
             void allocateInstances(std::uint16_t instances);
-            void setInstances(std::uint16_t instances, const std::vector<glm::mat4>& transforms, const std::vector<glm::vec4>& colors);
-            void setInstanceTransforms(const std::vector<glm::mat4>& transforms);
-            void setInstanceColors(const std::vector<glm::vec4>& colors);
+            void setInstances(const std::vector<InstanceData>&& instances); //
+            void updateInstances();
 
             void setInstancedRendering(bool isInstancedRendered) { m_isInstancedRendered = isInstancedRendered; }
 
             void render(const Shader& shader) const;
+
+            //Interface with instance data. Must call updateInstances() to pass new data to graphics pipeline
+            std::vector<InstanceData> m_instances;
         private:
             void init();
             bool m_isInit = false;
 
             bool m_isInstancedRendered;
-            std::uint16_t m_numInstances = 0;
+            std::uint16_t m_instancesToRender = 0;
 
             std::vector<SimpleVertex> m_vertices;
             std::vector<GLuint> m_indices;
             //Add support for textures
 
             GLuint m_VAO, m_VBO, m_EBO;
-            GLuint m_transformsVBO, m_colorsVBO; //Instancing
-            VERTEX_TYPE m_type = SIMPLE;
+            GLuint m_instancesVBO; //Instancing
     };
 }
 

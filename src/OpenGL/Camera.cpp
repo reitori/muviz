@@ -30,8 +30,20 @@ namespace viz{
         if(cameraLocked)
             return;
 
-        data.position += disp; 
+        data.position += disp;
     }
+
+    void Camera::smoothDisplace(glm::vec3 disp, float delTime){
+        if(cameraLocked)
+            return;
+
+        float speed = 1.25f; 
+        t += speed * delTime;
+        t = glm::clamp(t, 0.0f, 1.0f); // Keep t in [0,1]
+
+        data.position = glm::mix(data.position, data.position + disp, glm::smoothstep(0.0f, 1.0f, t));
+    }
+
     void Camera::setRotation(float rightAngle, float upAngle){
         if(cameraLocked)
             return;
@@ -66,6 +78,21 @@ namespace viz{
             updateOrientation();
         }
     }
+
+    void Camera::rotateAxis(glm::vec3 axis, float rotAngle){
+        if(cameraLocked)
+            return;
+
+        float rotAngleRad = 2.0f * viz_TO_RADIANS(rotAngle);
+
+        glm::quat q = glm::angleAxis(rotAngleRad, axis);
+        glm::vec3 newFront = glm::rotate(q ,data.front);
+
+        float smoothFactor = 0.5f;
+        data.front = glm::mix(data.front, newFront, smoothFactor);
+
+        updateOrientation();
+    }    
 
     void Camera::addScroll(float scroll){
         if(cameraLocked)

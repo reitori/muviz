@@ -48,8 +48,6 @@ namespace viz{
         m_framebuffer = std::make_unique<Framebuffer>(width, height);
         m_detector = std::make_unique<Detector>();
 
-        testCube = std::make_unique<SimpleMesh>(ChipVertices, CubeIndices, true);
-
         m_framebuffer->bind();
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
@@ -67,6 +65,11 @@ namespace viz{
     }
 
     void Renderer::render(){
+        auto now = std::chrono::steady_clock::now();
+        double currentTime = std::chrono::duration<double>(now.time_since_epoch()).count();
+        delTime = currentTime - lastTime;
+        lastTime = currentTime;
+
         m_framebuffer->bind();
             glClearColor(m_color[0], m_color[1], m_color[2], m_color[3]);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

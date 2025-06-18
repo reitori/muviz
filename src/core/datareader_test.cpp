@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
         long int size = 0;
         int nfe= 0;
         
-        for(int i = 0; i < cli.getSize(); i++) {
+        for(int i = 0; i < cli.getTotalFEs(); i++) {
             std::unique_ptr<std::vector<pixelHit>> data = cli.getData(i, true);
             if(data){
                 size += data->size();

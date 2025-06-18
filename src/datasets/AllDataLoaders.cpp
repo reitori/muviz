@@ -34,4 +34,3 @@ namespace StdDict {
         return registry().listClasses();
     }
 }
-

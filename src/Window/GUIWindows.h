@@ -82,6 +82,7 @@ namespace viz{
             float x = 0, y = 0, z = 0;
             float color[4] = {0, 0, 0, 1};
             float worldRot = 0.0f;
+            bool startCLI = false;
 
             ManagerWindow() = default;
             ManagerWindow(const char* name, std::shared_ptr<Renderer> renderer);

@@ -11,6 +11,7 @@
 #include "Events/Event.h"
 
 #include <glm/glm.hpp>
+#include <chrono>
 
 namespace viz{
     class Renderer{
@@ -38,6 +39,8 @@ namespace viz{
             
             void render();
             void sortTransparentObjects();
+
+            double getDelTime() const { return delTime; }
         private:
             friend class Application;
             std::shared_ptr<Detector> m_detector;
@@ -52,7 +55,7 @@ namespace viz{
             glm::vec4 m_color;
 
             glm::vec2 lastCursorPos;
-            std::unique_ptr<SimpleMesh> testCube;
+            double lastTime = 0.0f, delTime = 0.0f;
     };
 }
 

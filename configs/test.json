@@ -3,21 +3,19 @@
         "frame_time": 1000
     },
     "global_source_config": {
-        "path": "/home/kabel/Programming/visualizer/visualizer/data/",
         "auto": true,
-        "type": "YarrBinaryFile",
-        "fps": 100,
-        "block_timeout": 1000,
-        "max_events_per_block": 100000
+        "type": "SocketReceiver",
+        "fps": 100
     },
     "sources": [
         {
-            "name": "testchip",
+            "name": "0x131b4_4x4",
             "position": [0, 0, 0],
             "angle": [0, 0, 0],
             "size": [20, 20, 20],
             "rowcol": [400, 384],
-            "enable": 0
+            "enable": 1,
+            "port": "45766"
         }
     ]
 }

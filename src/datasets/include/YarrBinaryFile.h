@@ -18,7 +18,7 @@ public:
     void configure(const json &arg_config) override;
     void run() override;
     void join() override;
-    
+
 private:
     // implementation
     void process();
@@ -27,10 +27,9 @@ private:
 
     void readHeader();
     void readHits();
-    
-    uint32_t this_tag;
-    uint16_t this_l1id, this_bcid, this_t_hits;
 
+    uint32_t this_tag;
+    uint16_t this_l1id, this_bcid, this_t_hits, last_bcid;
 
     unsigned max_events_per_block, block_timeout; // configurable parameters
     
@@ -41,7 +40,6 @@ private:
     std::fstream fileHandle;
     std::streampos filePos;
     std::unique_ptr<EventData> curEvents;
-    Event thisEvent;
 };
 
 #endif

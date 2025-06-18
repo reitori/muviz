@@ -15,8 +15,10 @@
 
 #include "cli.h"
 
+#include "CircularBuffer.h"
+
 namespace viz{
-    extern std::vector<SimpleVertex> ChipVertices;
+    extern std::vector<SimpleVertex> CubeVertices;
     extern std::vector<SimpleVertex> HitVertices;
     extern std::vector<GLuint> CubeIndices;
 
@@ -29,13 +31,24 @@ namespace viz{
         glm::vec3 scale;
     };
 
+    struct Particle{
+        glm::vec3 pos;
+        glm::mat4 transform;
+        glm::vec4 color;
+
+        bool is_immortal;
+        float lifetime, ndcDepth;
+    };
+
     class Detector{
         public:
+            bool startCLI = false;
+
             Detector();
 
-            void init(const VisualizerCli& cli);
+            void init(const std::shared_ptr<VisualizerCli>& cli);
 
-            void update();
+            void update(const Camera& cam, float dTime);
             void setEventCallback(const std::function<void(event& e)>& callback) { eventCallback = callback; }
 
             void render(const Shader& shader);
@@ -43,23 +56,44 @@ namespace viz{
             std::vector<Chip> getChips() const { return m_chips;}
 
             uint32_t totHits();
+
+            float particleLifetime = 10;
         private:
+            int FindUnusedParticle();
+            int LastUsedParticle = 0;
+
             glm::mat4 transform(glm::vec3 scale, glm::vec3 eulerRot, glm::vec3 pos, bool isInRadians = false);
-            const VisualizerCli* m_cli;
+            std::shared_ptr<VisualizerCli> m_cli;
 
             GLuint m_instBufID; 
             std::uint32_t m_size = 0; //per frame basis
             std::uint16_t m_nfe;
 
+            std::uint32_t nHits = 0;
+
+            //CLI state is RECONSTRUCTED
+            //CircularBuffer<ReconstructedBunch> circularEventBuffer; //Moving window of reconstructed events are displayed at a time
+            std::vector<ReconstructedBunch> eventBuffer; //Indefinite number of reconstructed events displayed
+            
             glm::mat4 m_transform;
             std::vector<Chip> m_chips;
-            std::vector<glm::mat4> m_chipTransforms, m_hitTransforms; //stored separately from within Chip to speed up data reading when passing into buffers
-            std::vector<glm::vec4> m_chipColors, m_hitColors;
+            std::vector<Particle> ParticlesContainer;
+
+            SimpleMesh CubeMesh;
+            std::size_t startOfHitBuffer = 0;
 
             glm::vec3 hitScale = glm::vec3(0.05f, 0.05f, 0.05f);
+            glm::vec3 defaultHitColor = glm::vec4(1.0f, 0.2509f, 0.0235f, 1.0f);
 
-            SimpleMesh ChipMesh, HitMesh;
             std::function<void(event& e)> eventCallback;
+
+
+            //Delete this when you are done
+            int trackCount = 0;
+            std::vector<glm::vec3> frontHits;
+            std::vector<glm::vec3> backHits;
+            std::vector<glm::mat4> trackTransforms;
+            std::vector<glm::vec4> trackColors;
     };
 }
 

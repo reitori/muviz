@@ -18,6 +18,7 @@ YarrBinaryFile::YarrBinaryFile() {
     this_tag = 0;
     this_l1id = 0;
     this_bcid = 0;
+    last_bcid = 0;
     total_events = 0;
     total_hits = 0;
     run_thread = false;
@@ -40,6 +41,7 @@ void YarrBinaryFile::init() {
     this_tag = 0;
     this_l1id = 0;
     this_bcid = 0;
+    last_bcid = 0;
     total_events = 0;
     total_hits = 0;
     run_thread = false;
@@ -155,6 +157,12 @@ bool YarrBinaryFile::fromFile() {
             logger->debug("[{}] Failed to read event header - seeking file position {}", name, filePos);
         header_read = false; 
         return false;
+    }
+
+    if(last_bcid != this_bcid){
+        curEvents->bcidChanged = true;
+        curEvents->bcidChangeIndex.push_back(curEvents->size());
+        last_bcid = this_bcid;
     }
 
     header_read = true;
