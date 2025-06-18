@@ -159,7 +159,6 @@ namespace viz{
     }
 
     void Detector::updateParticles(const Camera& cam, const float& dTime){
-        logger->info("Total particles being rendered: {0}", CubeMesh.m_instances.size());
         CubeMesh.m_instances.clear();
         for(int i = 0; i < ParticlesContainer.size(); i++){
             Particle& p = ParticlesContainer[i];
