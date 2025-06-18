@@ -4,6 +4,7 @@
 #include "core/header.h"
 
 #include "OpenGL/Framebuffer.h"
+#include "OpenGL/ShaderManager.h"
 #include "OpenGL/Shader.h"
 #include "OpenGL/Camera.h"
 #include "OpenGL/Scene/Detector.h"
@@ -27,7 +28,7 @@ namespace viz{
             void attachDetector(std::shared_ptr<Detector> detetctor) { m_detector = detetctor; }
 
             void attachCamera(std::string name, const Camera& camera);
-            Camera* getCamera() {return &m_Cameras[m_currCam];}
+            Camera* getCamera() {return &m_cameras[m_currCam];}
             Camera* getCamera(std::string name);
             void destroyCamera(std::string name);
 
@@ -46,11 +47,8 @@ namespace viz{
             std::shared_ptr<Detector> m_detector;
             std::unique_ptr<Framebuffer> m_framebuffer;
 
-            std::uint8_t m_activeShaderNum;
-            std::vector<Shader> m_Shaders;
-
             std::string m_currCam;
-            std::map<std::string, Camera> m_Cameras;
+            std::map<std::string, Camera> m_cameras;
 
             glm::vec4 m_color;
 
