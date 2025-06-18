@@ -14,7 +14,7 @@ namespace viz{
     class Shader{
         public:
             Shader() = delete;
-            Shader(bool compileFromFile, const char* name, const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr);
+            Shader(bool compileFromFile, const std::string& name, const std::string& vertexPath, const std::string& fragmentPath, const std::string& geometryPath = "");
 
             inline void use() const {glUseProgram(m_id);}
 
@@ -66,6 +66,8 @@ namespace viz{
             ~Shader() {glDeleteShader(m_id);}
 
          private:
+            friend class ShaderManager;
+
             GLuint m_id;
             std::string m_name;
 

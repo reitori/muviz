@@ -1,8 +1,13 @@
 #include "OpenGL/Shader.h"
+#include "logging.h"
+
+namespace {
+    auto logger = logging::make_log("Shader");
+}
 
 namespace viz{
-    //Clarify whether you are compiling from a string or from a file in compileFromFile
-    Shader::Shader(bool compileFromFile, const char* name, const char* vertexPath, const char* fragmentPath, const char* geometryPath){
+    //Clarify whether you are compiling from a string or from a file in compileFromFile (true: from file; false: from string literal)
+    Shader::Shader(bool compileFromFile, const std::string& name, const std::string& vertexPath, const std::string& fragmentPath, const std::string& geometryPath){
         m_name = name;
         
         if(compileFromFile){
@@ -18,7 +23,6 @@ namespace viz{
             gShaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
             try 
             {
-    
                 vShaderFile.open(vertexPath);
                 fShaderFile.open(fragmentPath);
                 std::stringstream vShaderStream, fShaderStream;
@@ -32,7 +36,7 @@ namespace viz{
                 vertexCode = vShaderStream.str();
                 fragmentCode = fShaderStream.str();			
 
-                if(geometryPath != nullptr)
+                if(!geometryPath.empty())
                 {
                     gShaderFile.open(geometryPath);
                     std::stringstream gShaderStream;
@@ -43,11 +47,11 @@ namespace viz{
             }
             catch (std::ifstream::failure& e)
             {
-                m_appLogger->error("Shader File Reading: {0}", e.what());
+                logger->error("{0} Could not read from file: {1}", m_name, e.what());
             }
             const char* vShaderCode = vertexCode.c_str();
             const char * fShaderCode = fragmentCode.c_str();
-            // 2. compile shaders
+            // compile shaders
             unsigned int vertex, fragment;
             // vertex shader
             vertex = glCreateShader(GL_VERTEX_SHADER);
@@ -61,7 +65,7 @@ namespace viz{
             checkCompileErrors(fragment, "FRAGMENT");
             // if geometry shader is given, compile geometry shader
             unsigned int geometry;
-            if(geometryPath != nullptr)
+            if(!geometryPath.empty())
             {
                 const char * gShaderCode = geometryCode.c_str();
                 geometry = glCreateShader(GL_GEOMETRY_SHADER);
@@ -73,35 +77,38 @@ namespace viz{
             m_id = glCreateProgram();
             glAttachShader(m_id, vertex);
             glAttachShader(m_id, fragment);
-            if(geometryPath != nullptr)
+            if(!geometryPath.empty())
                 glAttachShader(m_id, geometry);
             glLinkProgram(m_id);
             checkCompileErrors(m_id, "PROGRAM");
             // delete the shaders as they're linked into our program now and no longer necessary
             glDeleteShader(vertex);
             glDeleteShader(fragment);
-            if(geometryPath != nullptr)
+            if(!geometryPath.empty())
                 glDeleteShader(geometry);
         }
 
         else{
             unsigned int vertex, fragment;
+            const char* vertexSource = vertexPath.c_str();
+            const char* fragmentSource = fragmentPath.c_str();
             // vertex shader
             vertex = glCreateShader(GL_VERTEX_SHADER);
-            glShaderSource(vertex, 1, &vertexPath, NULL);
+            glShaderSource(vertex, 1, &vertexSource, NULL);
             glCompileShader(vertex);
             checkCompileErrors(vertex, "VERTEX");
             // fragment Shader
             fragment = glCreateShader(GL_FRAGMENT_SHADER);
-            glShaderSource(fragment, 1, &fragmentPath, NULL);
+            glShaderSource(fragment, 1, &fragmentSource, NULL);
             glCompileShader(fragment);
             checkCompileErrors(fragment, "FRAGMENT");
             // if geometry shader is given, compile geometry shader
             unsigned int geometry;
-            if(geometryPath != nullptr)
+            if(!geometryPath.empty())
             {
+                const char* geometrySource = geometryPath.c_str();
                 geometry = glCreateShader(GL_GEOMETRY_SHADER);
-                glShaderSource(geometry, 1, &geometryPath, NULL);
+                glShaderSource(geometry, 1, &geometrySource, NULL);
                 glCompileShader(geometry);
                 checkCompileErrors(geometry, "GEOMETRY");
             }
@@ -109,14 +116,14 @@ namespace viz{
             m_id = glCreateProgram();
             glAttachShader(m_id, vertex);
             glAttachShader(m_id, fragment);
-            if(geometryPath != nullptr)
+            if(!geometryPath.empty())
                 glAttachShader(m_id, geometry);
             glLinkProgram(m_id);
             checkCompileErrors(m_id, "PROGRAM");
             // delete the shaders as they're linked into our program now and no longer necessary
             glDeleteShader(vertex);
             glDeleteShader(fragment);
-            if(geometryPath != nullptr)
+            if(!geometryPath.empty())
                 glDeleteShader(geometry);
         }
     }
@@ -131,7 +138,7 @@ namespace viz{
             if(!success)
             {
                 glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-                m_appLogger->error("{0} SHADER COMPILATION: {1}", type, infoLog);
+                logger->error("{2} {0} SHADER COMPILATION: {1}", type, infoLog, m_name);
             }
         }
         else
@@ -140,7 +147,7 @@ namespace viz{
             if(!success)
             {
                 glGetProgramInfoLog(shader, 1024, NULL, infoLog);
-                m_appLogger->error("{0} SHADER LINKING: {1}", type, infoLog);
+                logger->error("{2} {0} SHADER LINKING: {1}", type, infoLog, m_name);
             }
         }
     }
