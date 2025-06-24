@@ -5,55 +5,13 @@ namespace{
     auto logger = logging::make_log("ShaderManager");
 }
 
-const char* vertexShaderSource="#version 330 core\n"
-        "layout (location = 0) in vec3 aPos;\n"
-        "layout (location = 1) in vec4 aFrag;\n"
-
-        "layout (location = 2) in vec4 aInstanceFrag;\n"
-        "layout (location = 3) in mat4 aInstanceModel;\n"
-
-        "uniform mat4 uModel;\n"
-        "uniform mat4 uView;\n"
-        "uniform mat4 uProj;\n"
-
-        "uniform bool uIsInstanced;\n"
-        
-        "out vec4 fragOut;\n"
-
-        "void main()\n"
-        "{\n"
-        "   mat4 modelTransform = uIsInstanced ? aInstanceModel : uModel;\n"
-        "   gl_Position = uProj * uView * modelTransform * vec4(aPos, 1.0);\n"
-        "   fragOut = uIsInstanced ? aInstanceFrag : aFrag;\n"
-        "}\0";
-
-    const char* geometryShaderSource="version 330 compatibility\n"
-        "layout (triangles_adjacency) in;\n"
-        "layout (line_strip) out\n;"
-        
-        "void main();\n"
-        "{\n"
-        "   "
-        "}\n";
-
-
-    const char* fragmentShaderSource="#version 330 core\n"
-        "in vec4 fragOut;\n"
-        "out vec4 FragColor;\n"
-
-        "void main()\n"
-        "{\n"
-        "    FragColor = fragOut;\n"
-        "}\0";
-
 namespace viz{
     std::unordered_map<std::string, std::shared_ptr<Shader>> ShaderManager::m_Shaders;
 
     void ShaderManager::loadShaders(){
         auto execPath = (std::string)getExecutableDir();
 
-        auto mainShader = std::make_shared<Shader>(false, "main", vertexShaderSource, fragmentShaderSource);
-        //auto mainShader = std::make_shared<Shader>(true, "main", execPath + "/assets/shaders/MainVertex.glsl", execPath + "/assets/shaders/MainFragment.glsl");
+        auto mainShader = std::make_shared<Shader>(true, "main", execPath + "/assets/shaders/MainVertex.glsl", execPath + "/assets/shaders/MainFragment.glsl");
         auto hitmapShader = std::make_shared<Shader>(true, "hitmap", execPath + "/assets/shaders/HitMapVertex.glsl", execPath + "/assets/shaders/HitMapFragment.glsl");
 
         if(!addShader(mainShader))

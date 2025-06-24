@@ -29,7 +29,7 @@ private:
     void readHits();
 
     uint32_t this_tag;
-    uint16_t this_l1id, this_bcid, this_t_hits, last_bcid;
+    uint16_t this_l1id, this_bcid, this_t_hits;
 
     unsigned max_events_per_block, block_timeout; // configurable parameters
     

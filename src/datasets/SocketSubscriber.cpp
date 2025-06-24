@@ -97,7 +97,7 @@ void SocketSubscriber::process() {
             now = std::chrono::steady_clock::now();
             if (curEvents->size() > 0) {
                 float diff = std::chrono::duration_cast<std::chrono::microseconds>(now - last).count() / 1e6f;
-                logger->info(
+                logger->debug(
                     "[{}] Batch {}: {} events in {} seconds = {} ev/s TotalEvents: {}",
                     name, batch_n, curEvents->size(), diff, curEvents->size() / diff, total_events
                 );
