@@ -13,6 +13,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <chrono>
+
 #include "cli.h"
 
 #include "CircularBuffer.h"
@@ -53,16 +55,12 @@ namespace viz{
             void updateParticles(const Camera& cam, const float& dTime);
             int findUnusedParticle();
             std::uint32_t LastUsedParticle = 0;
-            std::uint32_t totalParticles = 10000;
+            std::uint32_t totalParticles = 25000;
 
             glm::mat4 transform(glm::vec3 scale, glm::vec3 eulerRot, glm::vec3 pos, bool isInRadians = false);
             std::shared_ptr<VisualizerCli> m_cli;
 
             std::uint32_t nHitsThisFrame = 0; //number of collected hits in a given frame
-
-            //CLI state is RECONSTRUCTED
-            //CircularBuffer<ReconstructedBunch> circularEventBuffer; //Moving window of reconstructed events are displayed at a time
-            std::vector<ReconstructedBunch> eventBuffer; //Indefinite number of reconstructed events displayed
             
             glm::mat4 m_transform;
             std::vector<Chip> m_chips;
@@ -75,6 +73,9 @@ namespace viz{
             glm::vec3 defaultHitColor = glm::vec4(1.0f, 0.2509f, 0.0235f, 1.0f);
 
             std::function<void(event& e)> eventCallback;
+
+            float totalupdatetime = 0.0f;
+            int totalupdateframes = 0;
     };
 }
 

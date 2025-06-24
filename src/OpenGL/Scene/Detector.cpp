@@ -58,7 +58,7 @@ namespace viz{
             std::vector<float> size = config["size"].get<std::vector<float>>();
             std::vector<float> rowcol = config["rowcol"].get<std::vector<float>>();
 
-            m_chips.emplace_back(true, rowcol[1], rowcol[0]);
+            m_chips.emplace_back(false, rowcol[1], rowcol[0]);
             auto& currChip = m_chips.back();
 
             currChip.name = name;
@@ -86,8 +86,8 @@ namespace viz{
     void Detector::update(const Camera& cam, const float& dTime){
         if(!m_cli->isRunning())
             return;
-        
-        std::this_thread::sleep_for(std::chrono::nanoseconds(25));
+
+        auto start = std::chrono::steady_clock::now();
         for(int i = 0; i < m_cli->getTotalFEs(); i++) {
             std::unique_ptr<std::vector<pixelHit>> data = m_cli->getData(i, true);
             if(data && data->size() > 0){
@@ -131,15 +131,11 @@ namespace viz{
         }
         
         updateParticles(cam, dTime);
+        auto end = std::chrono::steady_clock::now();
+        auto diff = end - start;
 
-        // m_cli->state = CLIstate::RECONSTRUCT;
-        // std::this_thread::sleep_for(std::chrono::nanoseconds(25));
-        // auto test = m_cli->getReconstructedBunch();
-        // for(int i = 0; i < test->size(); i++){
-        //     nHits += (*test)[i].nHits;
-        // }
-        // std::cout << "Detector hits total: " << nHits << std::endl;
-
+        totalupdatetime += std::chrono::duration_cast<std::chrono::milliseconds>(diff).count();
+        totalupdateframes++;
     }
 
     void Detector::updateHitDurations(float dur){
