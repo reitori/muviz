@@ -5,10 +5,13 @@ add_library(VisualizerLib SHARED
     datasets/SocketReceiver.cpp
     datasets/SocketSubscriber.cpp
     datasets/AllDataLoaders.cpp
+    datasets/EventReconstructor.cpp
     util/include/json.hpp
     util/include/util.hpp
     util/include/logging.h
     util/include/CircularBuffer.h
+    util/include/FEBookie.h
+    util/FEBookie.cpp
     util/logging.cpp
     util/cli.cpp
     util/util.cpp
@@ -52,6 +55,17 @@ add_executable(datatest
 )
 target_link_libraries(datatest VisualizerLib pthread)
 set_target_properties(datatest
+    PROPERTIES
+    LINKER_LANGUAGE CXX
+    RUNTIME_OUTPUT_DIRECTORY ${RUNTIME_INSTALL_AREA}
+)
+
+add_executable(reconstruction
+    core/EventReconstructionTest.cpp
+)
+target_include_directories(reconstruction PUBLIC ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(reconstruction VisualizerLib pthread)
+set_target_properties(reconstruction
     PROPERTIES
     LINKER_LANGUAGE CXX
     RUNTIME_OUTPUT_DIRECTORY ${RUNTIME_INSTALL_AREA}

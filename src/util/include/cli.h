@@ -19,6 +19,7 @@
 #include "logging.h"
 #include "AllDataLoaders.h"
 #include "DataBase.h"
+#include "util/include/FEBookie.h"
 
 namespace cli_helpers {
     extern std::shared_ptr<spdlog::logger> logger;
@@ -75,7 +76,7 @@ class VisualizerCli {
         std::unique_ptr<std::vector<Event>> getEvents(int fe_id, bool get_all=false) const;
         std::unique_ptr<std::vector<Event>> getEvents(std::string fe_id, bool get_all=false) const;
 
-        std::unique_ptr<std::vector<ReconstructedBunch>> getReconstructedBunch();
+        //std::unique_ptr<std::vector<ReconstructedBunch>> getReconstructedBunch();
 
         // std::vector<std::vector<int>> getProcessedData(int fe_id); // row, column for all hits in the EventData object
         // row col
@@ -114,7 +115,7 @@ class VisualizerCli {
         std::vector<std::string> names;
 
 
-        std::unique_ptr<std::vector<ReconstructedBunch>> uncompletedReconEvents; //Buffer containing uncompleted reconstructed events from the last getReconstructedEvents() call
+        //std::unique_ptr<std::vector<ReconstructedBunch>> uncompletedReconEvents; //Buffer containing uncompleted reconstructed events from the last getReconstructedEvents() call
         std::vector<uint32_t> curr_fe_bcid;
         uint32_t firstuncompleted_bcid = 0,  firstuntouched_bcid = 0; //Smallest bcid of reconstructed event that is in the process of reconstruction, smallest bcid of first reconstructed event that has
 
