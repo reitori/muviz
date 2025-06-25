@@ -66,6 +66,9 @@ class EventData {
         ~EventData() = default;
 
         void newEvent(unsigned arg_tag, unsigned arg_l1id, unsigned arg_bcid) {
+            events.emplace_back(Event(arg_tag, arg_l1id, arg_bcid));
+            curEvent = &events.back();
+
             if(curEvent != nullptr && (arg_bcid != curEvent->bcid + 1 || arg_bcid != curEvent->bcid)){
                 has_desync_events = true;
                 desync_event_indices.push_back(events.size()); //corresponds to the index in which this new desynced event will be placed
@@ -74,8 +77,6 @@ class EventData {
                 has_invalid_l1id = true;
                 invalid_l1id_indices.push_back(events.size());
             }
-            events.emplace_back(Event(arg_tag, arg_l1id, arg_bcid));
-            curEvent = &events.back();
         }
 
         void addEvent(const Event& new_event){

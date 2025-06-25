@@ -1,19 +1,20 @@
 #include "datasets/include/EventReconstructor.h"
 
+#include <iostream>
+
 namespace{
     auto logger = logging::make_log("EventReconstructor");
 }
 
 namespace viz{
     EventReconstructor::EventReconstructor(const uint8_t& total_fes){
-        clipboards.resize(total_fes);
+        clipboards.resize(total_fes, std::make_shared<ClipBoard<EventData>>());
         leftovers.resize(total_fes);
         refBCIDs.resize(total_fes, 0);
+        refL1IDs.resize(total_fes, 0);
 
         totalFEs = total_fes;
         triggerMultiplier = 0;
-        bcid = 0;
-        l1id;
     }
 
     void EventReconstructor::configure(DataLoader* dataloader, uint8_t fe_id, const json& config){
@@ -27,7 +28,7 @@ namespace viz{
     }
 
     std::vector<std::vector<Event>> EventReconstructor::getEvents(){
-        std::vector<std::vector<Event>> tempReturn;
+        std::vector<std::vector<Event>> tempReturn; tempReturn.resize(totalFEs);
         std::vector<std::unique_ptr<EventData>> data;
         std::vector<std::pair<int, int>> index_size;
 
@@ -35,13 +36,18 @@ namespace viz{
         index_size.reserve(totalFEs);
         for(int i = 0; i < totalFEs; i++){
             data[i] = std::move(clipboards[i]->popData());
-            index_size.push_back(std::make_pair(i, data[i]->size() + leftovers[i].size()));
-            if(data[i]->has_desync_events){
-                //Do something here for desync
-            }
-            if(triggerMultiplier == 0 && data[i]->has_invalid_l1id){
-                logger->info("Chip {0} has invalid l1id. Overwriting bcid from here on out.", FEBookie::getName(i));
-                triggerMultiplier = 1;
+            int dataSize = (bool)(data[i]) ? data[i]->size() : 0; //Handles case where popData() returns nullptr
+            index_size.push_back(std::make_pair(i, dataSize + leftovers[i].size()));
+
+            //Check some extraneous cases
+            if(data[i]){
+                if(data[i]->has_desync_events){
+                    //Do something here for desync
+                }
+                if(triggerMultiplier == 0 && data[i]->has_invalid_l1id){
+                    logger->info("Chip {0} has invalid l1id. Overwriting bcid from here on out.", FEBookie::getName(i));
+                    triggerMultiplier = 1;
+                }
             }
         }
         std::sort(index_size.begin(), index_size.end(), 
@@ -49,33 +55,42 @@ namespace viz{
                         return left.second < right.second;
                 }); //Sort based on smallest number of events in leftovers plus incoming data
 
+        unsigned int numToSend = index_size.front().second;
         if(triggerMultiplier > 0){ //Trigger multiplier mode
             //Load onto internal buffer before sending and rewrite bcid and l1ids
-            int numToSend = index_size.front().second;
             for(int i = 0;  i < totalFEs; i++){
-                int relFinalIndex = numToSend - leftovers[i].size() - 1;
+                if(!data[i])
+                    continue;
+
                 std::vector<Event>& currEvents = data[i]->events;
-                //Overwrite event bcid and l1id
-                for(int j = 0; j <= relFinalIndex; j++){
-                    currEvents[j].bcid = bcid;
-                    currEvents[j].l1id = l1id;
-                    l1id++;
-                    if(l1id % triggerMultiplier == 0){
-                        l1id = 0;
-                        bcid++;
+                if(leftovers[i].size() > numToSend){
+                    if(numToSend > 0){
+                        tempReturn[i].insert(tempReturn[i].end(), std::make_move_iterator(leftovers[i].begin()), std::make_move_iterator(leftovers[i].begin() + numToSend));
+                        leftovers[i].erase(leftovers[i].begin(), leftovers[i].begin() + numToSend - 1);
+                    }
+
+                    for(int j = 0; j < currEvents.size(); j++){
+                        overwriteEvent(currEvents[j], i);
+                        leftovers[i].push_back(currEvents[j]);
                     }
                 }
-            }
+                else if(leftovers[i].size() <= numToSend){
+                    unsigned int relFinalIndex = numToSend - leftovers[i].size();
+                    tempReturn[i] = std::move(leftovers[i]); // Fill return with all leftovers
 
-            //Prep sending of ready data
-            tempReturn = std::move(leftovers);
-
-            //Fill up leftovers
-            leftovers.clear();
-            for(int i = 0; i < totalFEs; i++){
-                int relFinalIndex = numToSend - leftovers[i].size() - 1;
-                std::vector<Event>& currEvents = data[i]->events;
-                leftovers[i].insert(leftovers[i].end(), currEvents.begin() + relFinalIndex + 1, currEvents.end());
+                    //Overwrite event bcid and l1id
+                    for(int j = 0; j < relFinalIndex; j++){ //Fill up return with all events ready to be batched
+                        overwriteEvent(currEvents[j], i);
+                        tempReturn[i].push_back(currEvents[j]);
+                    }
+                    for(int j = relFinalIndex; j < currEvents.size(); j++){ //Fill leftovers with everything else
+                        overwriteEvent(currEvents[j], i);
+                        leftovers[i].push_back(currEvents[j]);
+                    }
+                }
+                else{
+                    tempReturn[i] = std::move(leftovers[i]);
+                }
             }
         }else{
             //TODO: Mode relying on bcid?
@@ -110,5 +125,15 @@ namespace viz{
             }
         }
         return std::move(temp);
+    }
+
+    void EventReconstructor::overwriteEvent(Event& arg_event, uint8_t fe_id){
+        arg_event.bcid = refBCIDs[fe_id];
+        arg_event.l1id = refL1IDs[fe_id];
+        refL1IDs[fe_id]++;
+        if(refL1IDs[fe_id] % triggerMultiplier == 0){
+            refL1IDs[fe_id] = 0;
+            refBCIDs[fe_id]++;
+        }
     }
 }

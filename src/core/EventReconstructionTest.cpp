@@ -38,10 +38,10 @@ int main(int argc, char** argv){
         return 0;
     }
 
-    auto config = cli_helpers::openJsonFile(argv[1]);
+    auto config = cli_helpers::openJsonFile(std::string(argv[1]));
 
-    auto globalConfig = json();
-    auto sourcesConfig = json();
+    json globalConfig = nlohmann::json::object();
+    json sourcesConfig = nlohmann::json::object();
 
     if(config.contains("global_source_config"))
         globalConfig = config["global_source_config"];
@@ -63,8 +63,12 @@ int main(int argc, char** argv){
 
     for(int i = 0; i < totalFEs; i++){
         auto source = sourcesConfig[i];
+        FEBookie::addFE(i, source["name"]);
+
+        source.merge_patch(globalConfig);
         dataLoaders.push_back(StdDict::getDataLoader(source["type"]));
         auto& currDataLoader = dataLoaders.back();
+        currDataLoader->configure(source);
         currDataLoader->init();
         reconstructor.configure(currDataLoader.get(), i, globalConfig);
         currDataLoader->run();
@@ -73,27 +77,39 @@ int main(int argc, char** argv){
 
 
     int retries = 0;
-    while(retries < 10){
+    int loop = 0;
+    int totalRetries = 100000;
+    while(retries < totalRetries){
+        loop++;
+
         auto fe_events = reconstructor.getEvents();
-        
+
         //Not important just checks
         bool hasEvent = false;
         for(int i = 0; i < fe_events.size(); i++){
             if(fe_events[i].size() > 0)
                 hasEvent = true;
         }
-        if(hasEvent){
+        if(!hasEvent){
             retries++;
             continue;
         }
         //
 
+        retries = 0;
+
         for(int i = 0; i < fe_events.size(); i++){
             YARRoutputFiles[i].open((std::string(sourcesConfig[i]["name"]) + std::string(".raw")).c_str(), std::fstream::out | std::fstream::binary | std::fstream::trunc);
-            for(int j = 0; j < fe_events.size(); j++){
+            if(fe_events[i].size() > 0)
+            for(int j = 0; j < fe_events[i].size(); j++){
                 toFileBinary(YARRoutputFiles[i], fe_events[i][j]);
             }
+            YARRoutputFiles[i].close();
         }
+    }
+
+    for(int i = 0; i < dataLoaders.size(); i++){
+        dataLoaders[i]->join();
     }
 
     return 0;

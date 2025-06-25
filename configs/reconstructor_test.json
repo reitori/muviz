@@ -1,0 +1,25 @@
+{
+    "viz_config": {
+        "frame_time": 1000
+    },
+    "global_source_config": {
+        "path": "",
+        "auto": true,
+        "type": "YarrBinaryFile",
+        "fps": 100,
+        "block_timeout": 10,
+        "max_events_per_block": 1000,
+        "trigger_multiplier": 16
+    },
+    "sources": [
+        {
+            "name": "0x131b4_4x4",
+            "position": [0, 0, 0],
+            "angle": [0, 0, 0],
+            "size": [20, 20, 0.1],
+            "rowcol": [400, 384],
+            "enable": 1,
+            "port": "49150"
+        }
+    ]
+}
