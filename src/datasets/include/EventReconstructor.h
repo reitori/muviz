@@ -15,11 +15,17 @@ namespace viz{
             EventReconstructor() = delete;
             EventReconstructor(const uint8_t& total_fe);
 
-            void configure(DataLoader* dataloader, uint8_t fe_id, const json& config = json());
+            void configure(const json& config);
+            void connectDataLoader(DataLoader* dataloader, uint8_t fe_id);
+            void connectDataLoaders(std::vector<std::unique_ptr<DataLoader>>& dataloaders);
 
-            std::vector<std::vector<Event>> getEvents();
-            std::vector<std::vector<Event>> synchronize(uint16_t index = 0); //Not in use right now
+            //unique_ptr to force user to move data rather than copy
+            std::unique_ptr<FEEvents> getEvents();
+            std::unique_ptr<FEEvents> synchronize(uint8_t index = 0); //Not in use right now
 
+            size_t getLeftoversSize(uint8_t fe_id) const;
+            inline uint8_t getTotalFEs() {return totalFEs;} 
+        private:
             void overwriteEvent(Event& arg_event, uint8_t fe_id);
 
             std::vector<std::shared_ptr<ClipBoard<EventData>>> clipboards;
@@ -27,9 +33,10 @@ namespace viz{
             std::vector<uint32_t> refBCIDs; //For overriding bcid
             std::vector<uint32_t> refL1IDs; //For overriding l1id 
 
-
             uint8_t totalFEs, triggerMultiplier;
     };
+
+    
 }
 
 #endif

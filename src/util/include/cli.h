@@ -20,6 +20,24 @@
 #include "AllDataLoaders.h"
 #include "DataBase.h"
 #include "util/include/FEBookie.h"
+#include "datasets/include/EventReconstructor.h"
+#include "datasets/include/CorryWrapper.h"
+
+enum CLIstate {
+    //No batching of events is done. User gets most recent events.
+    //std::unique_ptr<Track> of the returned pair in getEventBatch() is always nullptr.
+    FAST,
+    
+    //User gets ownership of the most recently batched events.
+    //std::unique_ptr<Track> of the returned pair in getEventBatch() is always nullptr.
+    BATCH,
+
+    //User gets ownership of the most recently batched events.
+    //std::unique_ptr<Track> of the returned pair in getEventBatch() corresponds to the reconstructed
+    //                       of the batch of events.
+    TRACKS
+};
+
 
 namespace cli_helpers {
     extern std::shared_ptr<spdlog::logger> logger;
@@ -37,29 +55,14 @@ namespace cli_helpers {
     void setupLoggers(bool verbose);
 }
 
-enum CLIstate {
-    //User gets ownership of any chip events
-    //No reconstruction of events is done by the CLI.
-    //Gives ownership of any data off any chip to user when getData or getEvents is called.
-    //getReconstructedData and getReconstructedEvents returns nullptr.
-    NORMAL,
-    
-    //User gets ownership of a batch of th emost recent completed reconstructed event
-    //CLI reconstructs events based off of BCID (events with same BCID are placed in the same ReconstructedEvent type)
-    //Gives ownership of only reconstructed events when getReconstructedData or getReconstructedEvents is called.
-    //getData and getEvents returns nullptr
-    RECONSTRUCT
-};
 
 class VisualizerCli {
     public:
         VisualizerCli();
         ~VisualizerCli();
 
-        CLIstate state = CLIstate::NORMAL;
-
         // Runtime usage
-        int init(int argc, char** argv, CLIstate argstate = CLIstate::NORMAL);
+        int init(int argc, char** argv);
         int configure();
         int start();
         int stop();
@@ -69,23 +72,15 @@ class VisualizerCli {
         const json& getConfig(int fe_id) const;
         const json& getConfig(std::string fe_id) const;
         const json& getMasterConfig() {return config;}
+        bool setState(CLIstate state); //Initializes and sets up dataloaders for respective state
+
+        std::pair<std::unique_ptr<FEEvents>, std::unique_ptr<TrackData>> getEventBatch();
 
         std::unique_ptr<std::vector<pixelHit>> getData(int fe_id, bool get_all=false) const;
         std::unique_ptr<std::vector<pixelHit>> getData(std::string fe_id, bool get_all=false) const;
 
         std::unique_ptr<std::vector<Event>> getEvents(int fe_id, bool get_all=false) const;
         std::unique_ptr<std::vector<Event>> getEvents(std::string fe_id, bool get_all=false) const;
-
-        //std::unique_ptr<std::vector<ReconstructedBunch>> getReconstructedBunch();
-
-        // std::vector<std::vector<int>> getProcessedData(int fe_id); // row, column for all hits in the EventData object
-        // row col
-        // row col
-        // row col
-        // 
-        // # batches
-        // # events
-        // getSingleBatch();
 
         size_t  getTotalFEs() const {return clipboards.size();}
         bool isRunning() const { return started; }
@@ -95,9 +90,10 @@ class VisualizerCli {
         void printHelp();
 
         bool started = false;
-        bool firstTime = true;
+        bool dataLoadersConnected = false;
 
         uint32_t nHits = 0;
+        uint8_t totalFEs;
 
         std::unique_ptr<EventData> getRawData(int fe_id) const;
         std::unique_ptr<EventData> getRawData(std::string fe_id) const;
@@ -110,17 +106,13 @@ class VisualizerCli {
         json config;
         std::vector<std::unique_ptr<DataLoader>> dataLoaders;
         std::vector<std::shared_ptr<ClipBoard<EventData>>> clipboards;
+        std::unique_ptr<EventReconstructor> eventReconstructor;
+        std::unique_ptr<CorryWrapper> trackReconstructor;
         std::map<std::string, int> feIdMap;
         std::vector<int> configIdMap;
         std::vector<std::string> names;
 
-
-        //std::unique_ptr<std::vector<ReconstructedBunch>> uncompletedReconEvents; //Buffer containing uncompleted reconstructed events from the last getReconstructedEvents() call
-        std::vector<uint32_t> curr_fe_bcid;
-        uint32_t firstuncompleted_bcid = 0,  firstuntouched_bcid = 0; //Smallest bcid of reconstructed event that is in the process of reconstruction, smallest bcid of first reconstructed event that has
-
-
-        uint16_t numloops = 0;
+        CLIstate state;
 };
 
 #endif

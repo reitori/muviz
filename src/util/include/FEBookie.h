@@ -6,6 +6,8 @@
 #include <string>
 
 namespace viz{
+    //TODO: Change FEBookie to work with Detector class instead
+    //  ie: Query DetectorBookie instead and call getChips()
     class FEBookie{
         public:
             FEBookie() = default;

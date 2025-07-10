@@ -6,8 +6,10 @@ add_library(VisualizerLib SHARED
     datasets/SocketSubscriber.cpp
     datasets/AllDataLoaders.cpp
     datasets/EventReconstructor.cpp
+    datasets/CorryWrapper.cpp
     util/include/json.hpp
     util/include/util.hpp
+    util/include/cli.h
     util/include/logging.h
     util/include/CircularBuffer.h
     util/include/FEBookie.h
@@ -17,12 +19,12 @@ add_library(VisualizerLib SHARED
     util/util.cpp
 )
 
-target_link_libraries(VisualizerLib PUBLIC pthread rt glfw glad imgui glm stb libzmq)
-target_include_directories(VisualizerLib PUBLIC ${PROJECT_SOURCE_DIR}/src)
-target_include_directories(VisualizerLib PUBLIC datasets/include)
-target_include_directories(VisualizerLib PUBLIC util/include)
+target_link_libraries(VisualizerLib PUBLIC pthread rt glfw glad imgui glm stb libzmq corry_lib)
+target_include_directories(VisualizerLib PUBLIC ${PROJECT_SOURCE_DIR}/src 
+                                                datasets/include
+                                                util/include)
 
-add_executable(main 
+ add_executable(main
     core/main.cpp
     core/Application.cpp
     Window/glWindow.cpp
@@ -60,12 +62,23 @@ set_target_properties(datatest
     RUNTIME_OUTPUT_DIRECTORY ${RUNTIME_INSTALL_AREA}
 )
 
-add_executable(reconstruction
-    core/EventReconstructionTest.cpp
+#add_executable(reconstruction
+#    core/EventReconstructionTest.cpp
+#)
+#target_include_directories(reconstruction PUBLIC ${PROJECT_SOURCE_DIR}/src)
+#target_link_libraries(reconstruction VisualizerLib pthread)
+#set_target_properties(reconstruction
+#    PROPERTIES
+#    LINKER_LANGUAGE CXX
+#    RUNTIME_OUTPUT_DIRECTORY ${RUNTIME_INSTALL_AREA}
+#)
+
+add_executable(trackingtest
+    core/CorryWrapperTest.cpp
 )
-target_include_directories(reconstruction PUBLIC ${PROJECT_SOURCE_DIR}/src)
-target_link_libraries(reconstruction VisualizerLib pthread)
-set_target_properties(reconstruction
+target_include_directories(trackingtest PUBLIC ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(trackingtest VisualizerLib pthread)
+set_target_properties(trackingtest
     PROPERTIES
     LINKER_LANGUAGE CXX
     RUNTIME_OUTPUT_DIRECTORY ${RUNTIME_INSTALL_AREA}
