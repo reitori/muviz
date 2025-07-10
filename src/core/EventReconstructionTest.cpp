@@ -6,6 +6,7 @@
 
 #include "cli.h"
 #include "AllDataLoaders.h"
+#include "YarrBinaryFile.h"
 #include "EventReconstructor.h"
 
 using namespace viz;
@@ -74,42 +75,79 @@ int main(int argc, char** argv){
         currDataLoader->run();
     }
 
+   
+    for(int i = 0; i < YARRoutputFiles.size(); i++){
+         std::cout << "path " << (std::string)sourcesConfig[i]["name"] + std::string(".raw") << std::endl;
+        YARRoutputFiles[i].open((std::string(sourcesConfig[i]["name"]) + std::string(".raw")).c_str(), std::fstream::out | std::fstream::binary | std::fstream::trunc);
+    }
 
 
     int retries = 0;
     int loop = 0;
-    int totalRetries = 100000;
-    while(retries < totalRetries){
-        loop++;
-
+    int totalRetries = 10;
+    int target = 153137;
+    std::vector<int> totalEvents(totalFEs);
+    while (true) {
         auto fe_events = reconstructor.getEvents();
-
-        //Not important just checks
-        bool hasEvent = false;
-        for(int i = 0; i < fe_events.size(); i++){
-            if(fe_events[i].size() > 0)
-                hasEvent = true;
-        }
-        if(!hasEvent){
-            retries++;
-            continue;
-        }
-        //
-
-        retries = 0;
-
-        for(int i = 0; i < fe_events.size(); i++){
-            YARRoutputFiles[i].open((std::string(sourcesConfig[i]["name"]) + std::string(".raw")).c_str(), std::fstream::out | std::fstream::binary | std::fstream::trunc);
-            if(fe_events[i].size() > 0)
-            for(int j = 0; j < fe_events[i].size(); j++){
-                toFileBinary(YARRoutputFiles[i], fe_events[i][j]);
+        bool anyWritten = false;
+        for (int i = 0; i < totalFEs; ++i) {
+            if (!fe_events[i].empty()) {
+                anyWritten = true;
+                for (auto &e : fe_events[i])
+                    toFileBinary(YARRoutputFiles[i], e);
             }
-            YARRoutputFiles[i].close();
+        }
+
+        if (!anyWritten) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            retries++;
+        }
+        bool allDrained = true;
+        for (int i = 0; i < totalFEs; ++i) {
+            if (!reconstructor.clipboards[i]->empty() 
+                || !reconstructor.clipboards[i]->isDone()
+                || !fe_events[i].empty()) {
+                allDrained = false;
+                break;
+            }
+        }
+        if(allDrained){
+            break;
         }
     }
 
-    for(int i = 0; i < dataLoaders.size(); i++){
-        dataLoaders[i]->join();
+    for (auto &dl : dataLoaders) dl->join();
+
+    while (true) {
+        auto fe_events = reconstructor.getEvents();
+        bool gotOne = false;
+        for (int i = 0; i < totalFEs; ++i) {
+            if (!fe_events[i].empty()) {
+                gotOne = true;
+                for (auto &e : fe_events[i])
+                    toFileBinary(YARRoutputFiles[i], e);
+            }
+        }
+
+        if (!gotOne) break;
+    }
+
+    for(int i = 0; i < totalFEs; i++){
+                std::cout << "Chip: " << FEBookie::getName(i) << " has " << reconstructor.leftovers[i].size() << " leftover events" << std::endl;
+    }
+
+    for(int i = 0; i < totalFEs; i++){
+        if(reconstructor.clipboards[i]->size()){
+            std::cout << "Clipboard associated with chip " << FEBookie::getName(i) << " still has data though!?" << std::endl;
+        }
+        std::cout << FEBookie::getName(i) << " has a total event count: " << reconstructor.totalEvents[i] << std::endl;
+        std::cout << "       " <<            " has recieved event total " << totalEvents[i] << std::endl;
+        std::cout << "       " <<            " has tot clipboard count: " << reconstructor.clipboards[i]->getNumDataIn() << std::endl;
+        std::cout << "       " <<            " has total clipboard out: " << reconstructor.clipboards[i]->getNumDataOut() << "\n" << std::endl;
+    }
+
+    for(int i = 0; i < YARRoutputFiles.size(); i++){
+        YARRoutputFiles[i].close();
     }
 
     return 0;

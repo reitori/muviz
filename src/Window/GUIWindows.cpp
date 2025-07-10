@@ -27,7 +27,8 @@ namespace viz
             ImGuiID dockspace_id = ImGui::GetID(m_name.c_str());
             ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
             ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
-            ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_DockSpace);
+            ImGui::DockBuilderAddNode(dockspace_id,     static_cast<ImGuiDockNodeFlags>(ImGuiDockNodeFlags_None) |
+                                                        static_cast<ImGuiDockNodeFlags>(ImGuiDockNodeFlags_DockSpace));
             ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
             //
             // split the dockspace into 2 nodes -- DockBuilderSplitNode takes in the following args in the following order
@@ -85,35 +86,35 @@ namespace viz
         }
     }
 
-    void SceneWindow::onEvent(const event& e){
-        eventType type = e.getEventType();
-        const EventData* data = e.getData();
+    void SceneWindow::onEvent(const system::event& e){
+        system::eventType type = e.getEventType();
+        const system::eventData* data = e.getData();
         switch (type)
         {
-            case eventType::mouseButtonPress: {
-                if(data->mouseButton == mouse::mouseCodes::ButtonRight)
+            case system::eventType::mouseButtonPress: {
+                if(data->mouseButton == system::mouse::mouseCodes::ButtonRight)
                     m_mousePressed = true;
                 return;
             }
-            case eventType::mouseButtonRelease:{
+            case system::eventType::mouseButtonRelease:{
                 m_mousePressed = false;
                 return;
             }
-            case eventType::keyPress:{
-                if(data->keyButton == key::R){
+            case system::eventType::keyPress:{
+                if(data->keyButton == system::key::R){
                     m_RPressed = true;
                     return;
                 }
                 return;
             }
-            case eventType::keyRelease:{
-                if(data->keyButton == key::R){
+            case system::eventType::keyRelease:{
+                if(data->keyButton == system::key::R){
                     m_RPressed = false;
                     return;
                 }
                 return;
             }
-            case eventType::mouseMove:{
+            case system::eventType::mouseMove:{
                 ImVec2 mousePos = mouseRelToWin(ImVec2(data->floatPairedData.first, data->floatPairedData.second));
                 if(mouseInWin(mousePos)){
                     m_mouseInWin = true;
@@ -138,7 +139,7 @@ namespace viz
                 m_lastMouse = mousePos;
                 return;
             }    
-            case eventType::mouseScroll: {
+            case system::eventType::mouseScroll: {
                 if(m_mouseInWin){
                     Camera* cam = m_renderer->getCamera();
 

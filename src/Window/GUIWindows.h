@@ -28,7 +28,7 @@ namespace viz{
                 ImGui::End();
             }
 
-            virtual void onEvent(const event& e) = 0;
+            virtual void onEvent(const system::event& e) = 0;
             inline void setOpen(bool isOpen) {m_isOpen = isOpen;}
 
             virtual ~GUIWindow() = default;
@@ -46,7 +46,7 @@ namespace viz{
             Dockspace(const char* name, ImGuiWindowFlags windowFlags = 0) : GUIWindow(name, windowFlags) {}
 
             void init() override;
-            void onEvent(const event& e) override {}
+            void onEvent(const system::event& e) override {}
 
             virtual ~Dockspace() = default;
         private:
@@ -60,7 +60,7 @@ namespace viz{
             SceneWindow(const char* name, std::shared_ptr<Renderer> renderer, ImGuiWindowFlags windowFlags = 0) : GUIWindow(name, windowFlags),  m_renderer(renderer) {};
 
             void init() override {}
-            void onEvent(const event& e) override;
+            void onEvent(const system::event& e) override;
 
             void attachRenderer(std::shared_ptr<Renderer> renderer) {m_renderer = renderer;}
             virtual ~SceneWindow() = default;
@@ -89,7 +89,7 @@ namespace viz{
             ManagerWindow(const char* name, std::shared_ptr<Renderer> renderer);
 
             void init() override {};
-            void onEvent(const event& e) override {}
+            void onEvent(const system::event& e) override {}
 
             void attachDetector(std::shared_ptr<Renderer> renderer);
 
@@ -110,7 +110,7 @@ namespace viz{
 
             ConsoleWindow() = default;
             ConsoleWindow(const char* name) : GUIWindow(name) {}
-            void onEvent(const event& e) override {}
+            void onEvent(const system::event& e) override {}
 
             void init() {}
             void AddLog(const char* fmt, ...) IM_FMTARGS(2);

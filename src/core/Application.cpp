@@ -85,8 +85,8 @@ namespace viz
         }
     }
 
-    void Application::onEvent(event& e){
-        if(e.getEventType() == eventType::particleHit){
+    void Application::onEvent(system::event& e){
+        if(e.getEventType() == system::eventType::particleHit){
             std::string str = e.toString();
             ConsoleWindow* console = dynamic_cast<ConsoleWindow*>(m_GUIWindows[2].get());
             console->AddLog(str.c_str());

@@ -58,7 +58,7 @@ namespace viz{
             std::vector<float> size = config["size"].get<std::vector<float>>();
             std::vector<float> rowcol = config["rowcol"].get<std::vector<float>>();
 
-            m_chips.emplace_back(false, rowcol[1], rowcol[0]);
+            m_chips.emplace_back(true, rowcol[1], rowcol[0]);
             auto& currChip = m_chips.back();
 
             currChip.name = name;
@@ -106,8 +106,11 @@ namespace viz{
                     if(row > m_chips[i].maxRows || col > m_chips[i].maxCols)
                         break;
                     
-                    float diffx = (2.0f * (((float)row + 0.5f) / (float)currChip->maxRows) - 1.0f) * currChip->scale[0];
-                    float diffy = (2.0f * (((float)col + 0.5f) / (float)currChip->maxCols) - 1.0f) * currChip->scale[1];
+                    float diffy = ((float)row / (float)(currChip->maxRows)) * 2.0f - 1.0f;
+                    diffy *= currChip->scale[1];
+
+                    float diffx = ((float)col / (float)(currChip->maxCols)) * 2.0f - 1.0f;
+                    diffx *= currChip->scale[0];
                     glm::vec3 posRelToChip = glm::vec3(diffx, diffy, 0.0f);
                     glm::vec3 pos = currChip->pos + glm::toMat3(glm::quat(glm::vec3(viz_TO_RADIANS(currChip->eulerRot[0]), viz_TO_RADIANS(currChip->eulerRot[1]), viz_TO_RADIANS(currChip->eulerRot[2])))) * posRelToChip; //this could probably be optimized for later
 
@@ -122,7 +125,7 @@ namespace viz{
 
                     currChip->hits += 1;
 
-                    ParticleHit hitEvent(currChip->name, currChip->hits, row, col);
+                    system::ParticleHit hitEvent(currChip->name, currChip->hits, row, col);
                     eventCallback(hitEvent);
                 }
 

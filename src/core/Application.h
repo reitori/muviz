@@ -47,7 +47,7 @@ namespace viz{
             inline bool isInit() {return coreInit;}
 
             void run();
-            void onEvent(event& e);
+            void onEvent(system::event& e);
 
             ~Application();
 

@@ -42,7 +42,7 @@ namespace viz{
 
             void update(const Camera& cam, const float& dTime);
             void updateHitDurations(float dur);
-            void setEventCallback(const std::function<void(event& e)>& callback) { eventCallback = callback; }
+            void setEventCallback(const std::function<void(system::event& e)>& callback) { eventCallback = callback; }
 
             void render(const Shader& shader);
             void sortTransparent(const Camera& cam);
@@ -72,7 +72,7 @@ namespace viz{
             glm::vec3 hitScale = glm::vec3(0.05f, 0.05f, 0.05f);
             glm::vec3 defaultHitColor = glm::vec4(1.0f, 0.2509f, 0.0235f, 1.0f);
 
-            std::function<void(event& e)> eventCallback;
+            std::function<void(system::event& e)> eventCallback;
 
             float totalupdatetime = 0.0f;
             int totalupdateframes = 0;
