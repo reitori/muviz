@@ -270,7 +270,7 @@ namespace viz{
             logger->info("Loop Number: {0}", loop);
             logger->info("Writing to YARR files");
             loop++;
-            for (int i = 1; i < totalFEs; i++) {
+            for (int i = 0; i < totalFEs; i++) {
                 outputYARRFiles[i].close();
                 outputYARRFiles[i].open(outputYARRFileNames[i].c_str(), std::fstream::out | std::fstream::trunc);
                 auto& currEvents = (*currFEEvents)[i]->events;
