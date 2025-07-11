@@ -147,6 +147,7 @@ namespace viz{
             bool has_desync_events = false;
             std::vector<uint32_t> desync_event_indices;
             
+            std::string fromChip;
             Event* curEvent;
             std::vector<Event> events;
             uint16_t nHits = 0;
@@ -171,6 +172,7 @@ namespace viz{
             virtual void run() = 0;
             virtual void join() = 0;
 
+            std::string name;
         protected:
             std::shared_ptr<ClipBoard<EventData>> output;
             std::unique_ptr<std::thread> thread_ptr;

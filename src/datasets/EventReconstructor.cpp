@@ -8,7 +8,10 @@ namespace{
 
 namespace viz{
     EventReconstructor::EventReconstructor(const uint8_t& total_fes){
-        clipboards.resize(total_fes, std::make_shared<ClipBoard<EventData>>());
+        clipboards.resize(total_fes);
+        for(int i = 0; i < total_fes; i++){
+            clipboards[i] = std::make_shared<ClipBoard<EventData>>();
+        }
         leftovers.resize(total_fes);
         refBCIDs.resize(total_fes, 0);
         refL1IDs.resize(total_fes, 0);
@@ -27,7 +30,6 @@ namespace viz{
     void EventReconstructor::connectDataLoader(DataLoader* dataloader, uint8_t fe_id){
         if(fe_id >= 0 && fe_id < totalFEs)
             dataloader->connect(clipboards[fe_id]);
-
     }
 
     //Ensure that vector of DataLoaders are listed in order of associated fe_id (first element in vector corresponds to fe_id of 0)

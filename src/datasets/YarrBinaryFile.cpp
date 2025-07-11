@@ -81,6 +81,7 @@ namespace viz{
         else
             filename = name;
         fileHandle.open(filename.c_str(), std::istream::in | std::istream::binary);
+        fileHandle.seekg(0);
         filePos = fileHandle.tellg();
 
         if(!fileHandle.good()) 
@@ -107,6 +108,7 @@ namespace viz{
 
         batch_n = 0;
         curEvents = std::make_unique<EventData>();
+        curEvents->fromChip = name;
 
         std::chrono::steady_clock::time_point last = std::chrono::steady_clock::now(), now;
 
@@ -122,13 +124,11 @@ namespace viz{
                 // Push data and make new block of events
                 output->pushData(std::move(curEvents));
                 curEvents = std::make_unique<EventData>();
+                curEvents->fromChip = name; //For debugging purposes
 
                 batch_n++;
             }
-
-            if(!fileHandle){
-                break;
-            }
+            
 
             last = std::chrono::steady_clock::now();
         }

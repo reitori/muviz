@@ -37,7 +37,7 @@ namespace viz{
         unsigned total_events, batch_n, total_hits; // counters for reporting
         bool run_thread, header_read, hit_read;
 
-        std::string name, filename;
+        std::string filename;
         std::fstream fileHandle;
         std::streampos filePos;
         std::unique_ptr<EventData> curEvents;
