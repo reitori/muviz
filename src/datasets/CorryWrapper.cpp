@@ -69,6 +69,17 @@ namespace viz{
             logger->info("corryvreckan_main_file parameter is not set. Using default Corryvreckan main file instead.");
         }
 
+        std::string userCorryLibPath;
+        if(config.contains("corryvreckan_lib_folder")){
+            if(config["corryvreckan_lib_folder"].is_string()){
+                userCorryLibPath = config["corryvreckan_lib_folder"];
+            }else{
+                logger->error("Please provide a valid path to corryvreckan libraries");
+            }
+        }else{
+            logger->error("corryvreckan_lib_path parameter is not set.");
+        }
+
         //Set folder path for intermediary Corryvreckan input data and output data
         std::filesystem::path executableDirectory = viz::getExecutableDir();
         std::string folderName = std::string("corrywrapper_") + std::to_string(id);
@@ -121,7 +132,7 @@ namespace viz{
         corryMainFile << "[Corryvreckan]\n"
                       << "detectors_file = \"" << corryGeometryFileName << "\" \n"
                       << "output_directory = \"" << internalsPath.string() << "\" \n"
-                      << "library_directories = \"/home/kabel/Programming/testing/koji_corryvreckan/corryvreckan/lib\"\n" //IMPORTANT CHANGE THIS
+                      << "library_directories = \"" << userCorryLibPath << "\n"
                       << "histogram_file = \"\"\n" 
                       << "log_level = \"ERROR\"\n\n";
  

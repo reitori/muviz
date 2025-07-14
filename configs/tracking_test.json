@@ -1,0 +1,75 @@
+{
+    "viz_config": {
+        "frame_time": 1000
+    },
+    "global_source_config": {
+        "path": "path/to/chip/data",
+        "corryvreckan_geometry_file": "path/to/geometry/*.geo",
+        "corryvreckan_main_file": "path/to/main/*.conf",
+        "corryvreckan_lib_folder": "path/to/library",
+        "auto": true,
+        "type": "YarrBinaryFile",
+        "fps": 100,
+        "block_timeout": 0,
+        "event_handle_state": "TRACKS",
+        "max_events_per_block": 96,
+        "trigger_multiplier": 16,
+        "orientation_mode": "XYZ"
+    },
+    "sources": [
+        {
+            "name": "0x131a5",
+            "position": [
+                -0.289178,
+                -0.923234,
+                308.679
+            ],
+            "angle": [
+                -0.0324867,
+                -29.0549,
+                -0.615185
+            ],
+            "rowcol": [
+                400,
+                384
+            ],
+            "size": [20, 19.2, 0.1]
+        },
+        {
+            "name": "0x131a9",
+            "position": [
+                -0.424589,
+                -1.2636,
+                348.548
+            ],
+            "angle": [
+                0.396659,
+                -29.8996,
+                -1.07934
+            ],
+            "rowcol": [
+                384,
+                400
+            ],
+            "size": [20, 19.2, 0.1]
+        },
+        {
+            "name": "0x131a4",
+            "position": [
+                -0.372866,
+                -1.49951,
+                390.535
+            ],
+            "angle": [
+                -0.171887,
+                -29.7568,
+                -0.448569
+            ],
+            "rowcol": [
+                384,
+                400
+            ],
+            "size": [20, 19.2, 0.1]
+        }
+    ]
+}
