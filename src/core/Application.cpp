@@ -60,6 +60,8 @@ namespace viz
                 console->fps = 1.0f/dTime;
                 lastTime = currTime;
 
+
+                //GUI Frame
                 ImGui_ImplOpenGL3_NewFrame();
                 ImGui_ImplGlfw_NewFrame();
                 ImGui::NewFrame();
@@ -70,8 +72,12 @@ namespace viz
                 ImGui::Render();
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
+
+                //Detector Frame
                 m_detector->update(*m_renderer->getCamera(), dTime);
 
+
+                //Updates to detector
                 const ManagerWindow* manager = dynamic_cast<ManagerWindow*>(m_GUIWindows[3].get());
                 m_renderer->setColor(glm::vec4(manager->color[0], manager->color[1], manager->color[2], manager->color[3]));
                 if(manager->startCLI)
@@ -154,8 +160,8 @@ namespace viz
 
 
     Application::~Application(){
-        m_GUIWindows.clear(); std::cout << "Detector pointer instances: " << m_detector.use_count() << std::endl;
-        m_appWin.reset(); std::cout << "Renderer pointer instances: " << m_renderer.use_count() << std::endl;
+        m_GUIWindows.clear(); 
+        m_appWin.reset();
         m_detector.reset();
         m_renderer.reset();
 
