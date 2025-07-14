@@ -446,9 +446,7 @@ std::pair<std::unique_ptr<FEEvents>, std::unique_ptr<TrackData>> VisualizerCli::
             break;
 
         case CLIstate::BATCH:
-            for(uint8_t i = 0; i < totalFEs; i++){
                 tempEventData = std::move(eventReconstructor->getEvents());
-            }
             break;
 
         case CLIstate::TRACKS:

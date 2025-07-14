@@ -86,7 +86,7 @@ namespace viz{
              
                 for(int j = 0; j < currEvents.size(); j++){
                     overwriteEvent(currEvents[j], i);
-                    leftovers[i].push_back(currEvents[j]);
+                    leftovers[i].push_back(std::move(currEvents[j]));
                 }
             }
             else if(leftovers[i].size() < numToSend){
@@ -95,18 +95,18 @@ namespace viz{
                 //Overwrite event bcid and l1id
                 for(int j = 0; j < relFinalIndex; j++){ //Fill up return with all events ready to be batched
                     overwriteEvent(currEvents[j], i);
-                    tempReturn[i]->events.push_back(currEvents[j]);
+                    tempReturn[i]->events.push_back(std::move(currEvents[j]));
                 }
                 for(int j = relFinalIndex; j < currEvents.size(); j++){ //Fill leftovers with everything else
                     overwriteEvent(currEvents[j], i);
-                    leftovers[i].push_back(currEvents[j]);
+                    leftovers[i].push_back(std::move(currEvents[j]));
                 }
             }
             else{
                 tempReturn[i]->events = std::move(leftovers[i]);
                 for(int j = 0; j < currEvents.size(); j++){
                     overwriteEvent(currEvents[j], i);
-                    leftovers[i].push_back(currEvents[j]);
+                    leftovers[i].push_back(std::move(currEvents[j]));
                 }
             }
         }

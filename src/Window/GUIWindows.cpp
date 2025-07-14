@@ -177,7 +177,7 @@ namespace viz
             startCLI = false;
         }
 
-        ImGui::SliderFloat("Hit Duration", &hitDuration, 0.5f, 25.0f);
+        ImGui::SliderFloat("Hit Duration", &hitDuration, 0.1f, 10.0f);
         
         std::vector<Chip>& chips = m_renderer->getDetector()->getChips();
         for(int i = 0; i < chips.size(); i++){

@@ -50,13 +50,59 @@ namespace viz{
     void Detector::init(const std::shared_ptr<VisualizerCli>& cli){
         m_cli = cli;
 
+
         for(int i = 0; i < cli->getTotalFEs(); i++) {
             const json& config = cli->getConfig(i);
             std::string name = config["name"].get<std::string>();
-            std::vector<float> pos = config["position"].get<std::vector<float>>();
-            std::vector<float> angle = config["angle"].get<std::vector<float>>();
-            std::vector<float> size = config["size"].get<std::vector<float>>();
-            std::vector<float> rowcol = config["rowcol"].get<std::vector<float>>();
+            std::vector<float> pos;
+            if(config.contains("position")){
+                pos = config["position"].get<std::vector<float>>();
+            }else{
+                pos = {0.0f, 0.0f, 0.0f};
+                logger->warn("Position not given, assuming default value (0, 0, 0) for chip {}", name);
+            }
+
+            std::vector<float> angle;
+            if(config.contains("angle")){
+                angle = config["angle"].get<std::vector<float>>();
+            }else{
+                angle = {0.0f, 0.0f, 0.0f};
+                logger->warn("Angle not given, assuming default value (0, 0, 0) for chip {}", name);
+            }
+
+            std::vector<float> size;
+            if(config.contains("size")){
+                size = config["size"].get<std::vector<float>>();
+            }else{
+                size = {1.0f, 1.0f, 0.1f};
+                logger->warn("Size not given, assuming default value (1, 1, 0.1) for chip {}", name);
+            }
+
+            std::vector<float> rowcol;
+            if(config.contains("rowcol")) {
+                rowcol = config["rowcol"].get<std::vector<float>>();
+            }else{
+                logger->error("Please provide 'rowcol' for chip {}", name);
+                throw std::runtime_error("Missing required 'rowcol' parameter for chip: " + name);
+            }
+
+            OrientationMode orientation;
+            if(config.contains("orientation_mode")){
+                orientation = config["orientation_mode"];
+            }else{
+                if(config.contains("corryvreckan_geometry_file"))
+                    orientation = OrientationMode::XYZ;
+                else{
+                    orientation = OrientationMode::QUAT;
+                }
+            }
+
+            bool usingRad;
+            if(config.contains("angle_unit") && (config["angle_unit"] == std::string("rad") || config["angle_unit"] == std::string("radian"))){
+                usingRad = true;
+            }else{
+                usingRad = false; // default to degrees
+            }
 
             m_chips.emplace_back(true, rowcol[1], rowcol[0]);
             auto& currChip = m_chips.back();
@@ -67,9 +113,10 @@ namespace viz{
             currChip.eulerRot = glm::vec3(angle[0], angle[1], angle[2]);
             currChip.scale = glm::vec3(size[0] / 2.0f, size[1] / 2.0f, size[2] / 2.0f);
             currChip.hits = 0;
+            currChip.orientation = orientation;
 
-            glm::mat4 tempTfm = transform(currChip.scale, currChip.eulerRot, currChip.pos, false);
-            
+            glm::mat4 tempTfm = transform(currChip.scale, currChip.eulerRot, currChip.pos, orientation, usingRad);
+
             Particle tempPart;
             tempPart.pos = currChip.pos;
             tempPart.transform = tempTfm;
@@ -79,6 +126,18 @@ namespace viz{
             tempPart.ndcDepth = 0.0f;
             ParticlesContainer[findUnusedParticle()] = tempPart;
         };
+
+        //Find length of detector
+        detectorLength = 0;
+        for(int i = 0; i < m_chips.size(); i++){
+            glm::vec3 thisPosition = m_chips[i].pos;
+            for(int j = i + 1; j < m_chips.size(); j++){
+                float testLength = (m_chips[j].pos - thisPosition).length();
+                if(testLength > detectorLength){
+                    detectorLength = testLength;
+                }
+            }
+        }
         
         logger->info("Detector initialized with {0} chips", m_chips.size());
     }
@@ -88,51 +147,104 @@ namespace viz{
             return;
 
         auto start = std::chrono::steady_clock::now();
+        std::pair<std::unique_ptr<FEEvents>, std::unique_ptr<TrackData>> batchData = m_cli->getEventBatch();
+        std::unique_ptr<TrackData>& trackData = batchData.second;
+
+        if(!batchData.first) //No hits or tracks in this case
+            return;
+
+        //Update hits on chips
         for(int i = 0; i < m_cli->getTotalFEs(); i++) {
-            std::unique_ptr<std::vector<pixelHit>> data = m_cli->getData(i, true);
-            if(data && data->size() > 0){
+            std::unique_ptr<EventData>& chipEventData = (*batchData.first)[i];
+
+            if(chipEventData && chipEventData->size() > 0){
                 glm::vec3 chipScale = m_chips[i].scale;
 
                 Chip* currChip = &m_chips[i];
                 float hitSize = (1.0f / std::min(currChip->maxRows, currChip->maxCols)) * currChip->scale[0];
-                nHitsThisFrame += data->size();
-                
-                currChip->updateHitMap(*data);
 
-                for(int j = 0; j < data->size(); j++){
-                    std::uint16_t row = (*data)[j].row;
-                    std::uint16_t col = (*data)[j].col;
+                //Batch all of the hit data together to reduce number of calls to updateHitMap, which swaps shaders
+                //Shader swapping is on order of magnitude of microseconds whereas moving/copying is nanoseconds
+                std::vector<pixelHit> hitData;
+                hitData.reserve(chipEventData->nHits);
+                for(Event& currEvents : chipEventData->events){
+                    for(auto hit : currEvents.hits){
+                        std::uint16_t row = hit.row;
+                        std::uint16_t col = hit.col;
 
-                    if(row > m_chips[i].maxRows || col > m_chips[i].maxCols)
-                        break;
-                    
-                    float diffy = ((float)row / (float)(currChip->maxRows)) * 2.0f - 1.0f;
-                    diffy *= currChip->scale[1];
+                        if(row > m_chips[i].maxRows || col > m_chips[i].maxCols)
+                            break;
+                            
+                        float diffy = ((float)row / (float)(currChip->maxRows)) * 2.0f - 1.0f;
+                        diffy *= currChip->scale[1];
 
-                    float diffx = ((float)col / (float)(currChip->maxCols)) * 2.0f - 1.0f;
-                    diffx *= currChip->scale[0];
-                    glm::vec3 posRelToChip = glm::vec3(diffx, diffy, 0.0f);
-                    glm::vec3 pos = currChip->pos + glm::toMat3(glm::quat(glm::vec3(viz_TO_RADIANS(currChip->eulerRot[0]), viz_TO_RADIANS(currChip->eulerRot[1]), viz_TO_RADIANS(currChip->eulerRot[2])))) * posRelToChip; //this could probably be optimized for later
+                        float diffx = ((float)col / (float)(currChip->maxCols)) * 2.0f - 1.0f;
+                        diffx *= currChip->scale[0];
+                        glm::vec3 posRelToChip = glm::vec3(diffx, diffy, 0.0f);
+                        glm::vec3 pos = currChip->pos + glm::toMat3(glm::quat(glm::vec3(viz_TO_RADIANS(currChip->eulerRot[0]), viz_TO_RADIANS(currChip->eulerRot[1]), viz_TO_RADIANS(currChip->eulerRot[2])))) * posRelToChip; //this could probably be optimized for later
 
-                    Particle tempPart;
-                    tempPart.pos = pos;
-                    tempPart.transform = transform(glm::vec3(hitSize, hitSize, currChip->scale[2] + 0.1f), currChip->eulerRot, pos);
-                    tempPart.color = glm::vec4(defaultHitColor, 1.0f);
-                    tempPart.is_immortal = false;
-                    tempPart.lifetime = hitDuration;
-                    tempPart.ndcDepth = 0.0f;
-                    ParticlesContainer[findUnusedParticle()] = tempPart;
+                        Particle tempPart;
+                        tempPart.pos = pos;
+                        tempPart.transform = transform(glm::vec3(hitSize, hitSize, currChip->scale[2] + 0.1f), currChip->eulerRot, pos, currChip->orientation, currChip->usingRads);
+                        tempPart.color = glm::vec4(defaultHitColor, 1.0f);
+                        tempPart.is_immortal = false;
+                        tempPart.lifetime = hitDuration;
+                        tempPart.ndcDepth = 0.0f;
+                        tempPart.isHit = true;
+                        ParticlesContainer[findUnusedParticle()] = tempPart;
 
-                    currChip->hits += 1;
+                        currChip->hits += 1;
 
-                    system::ParticleHit hitEvent(currChip->name, currChip->hits, row, col);
-                    eventCallback(hitEvent);
+                        system::ParticleHit hitEvent(currChip->name, currChip->hits, row, col);
+                        eventCallback(hitEvent);
+
+                        hitData.emplace_back(row, col);
+                    }
                 }
 
-                data.reset();
+                currChip->updateHitMap(hitData);
+            }
+        }
+
+        //Update tracks
+        if(trackData && trackData->size() > 0){
+            for(auto& track : *trackData){
+                if(track->trackType == Track::type::straight){
+                    StraightLineTrack* straight = static_cast<StraightLineTrack*>(track.get());
+                    //Length of the track is determined by the length of the detector divded by cos of the angle between track and z-axis
+                    //float trackLength = (detectorLength * straight->direction.length()) / (glm::dot(straight->direction, glm::vec3(0.0f, 0.0f, 1.0f)));
+                    float trackLength = 500.0f; // Need to change so not harcoded
+                    glm::vec3 size(0.05f, 0.05f, trackLength);
+
+                    //Create quat that rotates from +Z-dir to direction
+                    glm::normalize(straight->direction);
+                    const glm::vec3 zAxis{0.f,0.f,1.f};
+                    float dot       = glm::dot(zAxis, straight->direction);
+                    glm::vec3 cross = glm::cross(zAxis, straight->direction);
+
+                    if (glm::length2(cross) < 1e-6f) {
+                        cross = glm::vec3{1.f,0.f,0.f};
+                        dot   = -1.f;
+                    }
+
+                    glm::quat q{ dot + 1.f, cross.x, cross.y, cross.z };
+                    q = glm::normalize(q);
+
+                    Particle trackPart;
+                    trackPart.pos = straight->point;
+                    trackPart.transform = transform(size, q, straight->point);
+                    trackPart.color = glm::vec4(0.745f, 0.373f, 0.859f, 1.0f);
+                    trackPart.is_immortal = false;
+                    trackPart.lifetime = hitDuration;
+                    trackPart.ndcDepth = 0.0f;
+                    trackPart.isHit = false;
+                    ParticlesContainer[findUnusedParticle()] = trackPart;
+                }
             }
         }
         
+        batchData.first.reset(); batchData.second.reset();
+
         updateParticles(cam, dTime);
         auto end = std::chrono::steady_clock::now();
         auto diff = end - start;
@@ -173,7 +285,11 @@ namespace viz{
                         InstanceData data;
                         data.transform = p.transform;
                         float ratio = p.lifetime / hitDuration;
-                        data.color = glm::vec4((1 - ratio), ratio, 0, p.lifetime / hitDuration);
+                        if(p.isHit)
+                            data.color = glm::vec4((1 - ratio), ratio, 0, p.lifetime / hitDuration);
+                        else{
+                            data.color = glm::vec4(p.color.x, p.color.y, p.color.z, p.lifetime / hitDuration);
+                        }
 
                         CubeMesh.m_instances.push_back(data);
                     }
@@ -226,15 +342,56 @@ namespace viz{
         // });
     }
 
-    glm::mat4 Detector::transform(glm::vec3 scale, glm::vec3 eulerRot, glm::vec3 pos, bool isInRadians){
+    glm::mat4 Detector::transform(const glm::vec3& scale, const glm::quat& args_quat, const glm::vec3& pos){
         glm::mat4 tempTfm = glm::mat4(1.0f);
         tempTfm = glm::scale(tempTfm, scale);
 
-        if(!isInRadians)
-            eulerRot = glm::vec3(viz_TO_RADIANS(eulerRot[0]), viz_TO_RADIANS(eulerRot[1]), viz_TO_RADIANS(eulerRot[2]));
-
-        tempTfm = glm::toMat4(glm::quat(eulerRot)) * tempTfm;
+        tempTfm = glm::toMat4(args_quat) * tempTfm;
         tempTfm = glm::translate(glm::mat4(1.0f), pos) * tempTfm;
+        return tempTfm;
+    }
+    
+
+    glm::mat4 Detector::transform(glm::vec3 scale, glm::vec3 eulerRot, glm::vec3 pos, OrientationMode orientation, bool isInRadians){
+        glm::mat4 tempTfm = glm::mat4(1.0f);
+        tempTfm = glm::scale(tempTfm, scale);
+
+        if (!isInRadians) {
+            eulerRot = glm::radians(eulerRot);
+        }
+
+        // Build rotation matrix based on extrinsic Euler angles
+        glm::mat4 rot = glm::mat4(1.0f);
+        switch (orientation) {
+            case OrientationMode::XYZ:
+                // Extrinsic: apply X, then Y, then Z rotation around global axes
+                rot = glm::rotate(glm::mat4(1.0f), eulerRot.x, glm::vec3(1, 0, 0));
+                rot = glm::rotate(rot, eulerRot.y, glm::vec3(0, 1, 0));
+                rot = glm::rotate(rot, eulerRot.z, glm::vec3(0, 0, 1));
+                break;
+
+            case OrientationMode::ZYX:
+                rot = glm::rotate(glm::mat4(1.0f), eulerRot.z, glm::vec3(0, 0, 1));
+                rot = glm::rotate(rot, eulerRot.y, glm::vec3(0, 1, 0));
+                rot = glm::rotate(rot, eulerRot.x, glm::vec3(1, 0, 0));
+                break;
+
+            case OrientationMode::ZXZ:
+                rot = glm::rotate(glm::mat4(1.0f), eulerRot.z, glm::vec3(0, 0, 1));
+                rot = glm::rotate(rot, eulerRot.x, glm::vec3(1, 0, 0));
+                rot = glm::rotate(rot, eulerRot.z, glm::vec3(0, 0, 1));
+                break;
+
+            case OrientationMode::QUAT:
+                rot = glm::toMat4(glm::quat(eulerRot));
+
+            default:
+                break;
+        }
+
+        tempTfm = rot * tempTfm;
+        tempTfm = glm::translate(glm::mat4(1.0f), pos) * tempTfm;
+
         return tempTfm;
     }
 }

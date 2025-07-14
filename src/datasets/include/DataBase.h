@@ -19,6 +19,11 @@
 
 namespace viz{
 
+    enum OrientationMode{
+        QUAT, XYZ, ZYX, ZXZ
+    };
+
+
     struct Hit {
         uint16_t col : 16;
         uint16_t row : 16;
@@ -38,6 +43,7 @@ namespace viz{
         };
 
         Track::type trackType;
+        virtual ~Track() = default;
     }; 
 
     struct StraightLineTrack : Track{

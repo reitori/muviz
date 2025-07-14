@@ -27,8 +27,9 @@ namespace viz{
         glm::vec3 pos;
         glm::mat4 transform;
         glm::vec4 color;
-
+        
         bool is_immortal;
+        bool isHit;
         float lifetime, ndcDepth;
     };
 
@@ -50,14 +51,16 @@ namespace viz{
 
             uint32_t totHits(); 
 
-            float hitDuration = 10.0f;
+            float hitDuration = 0.5f;
         private:
             void updateParticles(const Camera& cam, const float& dTime);
+            void configure();
             int findUnusedParticle();
             std::uint32_t LastUsedParticle = 0;
-            std::uint32_t totalParticles = 25000;
+            std::uint32_t totalParticles = 100000;
 
-            glm::mat4 transform(glm::vec3 scale, glm::vec3 eulerRot, glm::vec3 pos, bool isInRadians = false);
+            glm::mat4 transform(const glm::vec3& scale, const glm::quat& args_quat, const glm::vec3& pos);
+            glm::mat4 transform(glm::vec3 scale, glm::vec3 eulerRot, glm::vec3 pos, OrientationMode orientation, bool isInRadians = false);
             std::shared_ptr<VisualizerCli> m_cli;
 
             std::uint32_t nHitsThisFrame = 0; //number of collected hits in a given frame
@@ -75,6 +78,7 @@ namespace viz{
             std::function<void(system::event& e)> eventCallback;
 
             float totalupdatetime = 0.0f;
+            float detectorLength;
             int totalupdateframes = 0;
     };
 }

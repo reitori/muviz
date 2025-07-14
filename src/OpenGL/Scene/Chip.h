@@ -22,6 +22,7 @@ namespace viz{
             void enableHitMap();
             void disableHitMap();
             void updateHitMap(const std::vector<pixelHit>& hits);
+            void updateHitMap(const std::vector<Hit>& hits);
 
             // Getters for basic attributes
             inline bool isHitMapEnabled() const { return hitMapEnabled; }
@@ -43,6 +44,8 @@ namespace viz{
             std::uint64_t hits;
         
             glm::vec3 pos, eulerRot, scale;
+            OrientationMode orientation;
+            bool usingRads;
         private:
             friend class Detector;
             std::unique_ptr<Framebuffer> m_hitMapFramebuffer;
