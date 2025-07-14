@@ -16,7 +16,17 @@ std::vector<std::unique_ptr<DataLoader>> dataLoaders;
 
 std::unique_ptr<VisualizerCli> cli;
 
+//For running tests
+std::vector<std::thread> threads;
+std::vector<std::pair<std::unique_ptr<FEEvents>, std::unique_ptr<TrackData>>> hsi;
+
 auto logger = logging::make_log("CLITest");
+
+void testThread(int i){
+    while(true){
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+}
 
 int main(int argc, char** argv){
     if(argc < 3){
@@ -42,6 +52,9 @@ int main(int argc, char** argv){
         return 0;
     }
 
+    for(int i = 0; i < 10; i++){
+        threads.push_back(std::thread(&testThread, i));
+    }
     
     cli = std::make_unique<VisualizerCli>();
     int cli_status = cli->init(argc, argv); 
@@ -61,10 +74,10 @@ int main(int argc, char** argv){
             for(auto& track : *tracks){
                 if(track->trackType == Track::type::straight){
                     StraightLineTrack* straight = static_cast<StraightLineTrack*>(track.get());
-                    std::cout << "StraightLineTrack " << "(" << straight->point.x << "," << straight->point.y << "," << straight->point.z << "), "
-                                                      << "(" << straight->direction.x << "," << straight->direction.y << "," << straight->direction.z << "), "
-                                                      << straight->uncertainties.x << ", " << straight->uncertainties.y << ", " << straight->uncertainties.z << ", "
-                                                      << straight->uncertainties.a << "\n";
+                    // std::cout << "StraightLineTrack " << "(" << straight->point.x << "," << straight->point.y << "," << straight->point.z << "), "
+                    //                                   << "(" << straight->direction.x << "," << straight->direction.y << "," << straight->direction.z << "), "
+                    //                                   << straight->uncertainties.x << ", " << straight->uncertainties.y << ", " << straight->uncertainties.z << ", "
+                    //                                   << straight->uncertainties.a << "\n";
                 }
             }
         }
