@@ -9,6 +9,8 @@ namespace viz{
     uint8_t CorryWrapper::totalInstances = 0;
 
     CorryWrapper::CorryWrapper(std::unique_ptr<EventReconstructor>&& event_reconstructor) : run_thread_mutex() {
+        logger->info("Initiaizlizing CorryWrapper instance {}", totalInstances);
+
         run_thread = false;
         isInit = false;
         reconstructor = std::move(event_reconstructor);
@@ -84,6 +86,7 @@ namespace viz{
                 logger->error("Failed to create YARR intermediary file for chip {0}.", FEBookie::getName(i));
                 return false;
             }
+            currYARRFile.close();
         }
 
         //Create intermediary Corryvreckan data file (from the TextWriter)
@@ -257,9 +260,6 @@ namespace viz{
     }
 
     void CorryWrapper::process(){
-        int loop = 0;
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         while(isThreadRunning()){
             std::unique_ptr<FEEvents> currFEEvents = std::move(reconstructor->getEvents());
             if(!currFEEvents){
@@ -267,11 +267,7 @@ namespace viz{
                 continue;
             }
 
-            logger->info("Loop Number: {0}", loop);
-            logger->info("Writing to YARR files");
-            loop++;
             for (int i = 0; i < totalFEs; i++) {
-                outputYARRFiles[i].close();
                 outputYARRFiles[i].open(outputYARRFileNames[i].c_str(), std::fstream::out | std::fstream::trunc);
                 auto& currEvents = (*currFEEvents)[i]->events;
                 unsigned int totalHits = 0;
@@ -283,14 +279,10 @@ namespace viz{
                 }
                 
                 (*currFEEvents)[i]->nHits = totalHits;
-                outputYARRFiles[i].flush();
+                outputYARRFiles[i].close();
             }
 
-            logger->info("Running Corryvreckan");
-            for(int i = 0; i < totalFEs; i++){
-                logger->warn("{0} - {1}", (*currFEEvents)[i]->size(), reconstructor->getLeftoversSize(i));
-            }
-            // Run corryvreckan
+            //Run corryvreckan
             //Corryvreckan object unfortunately does not provide any other way other than reading off the configuration file
             //to load and initialize the modules used in the run() (i.e. no interface for passing in a ConfigManager into Corryvreckan object).
             //Means we have to take a roundabout approach of creating a Corry configuration file and passing its path into Corryvreckan object.
@@ -299,14 +291,12 @@ namespace viz{
             corry->init();
             corry->run();
             corry->finalize();
-            corry->terminate();
-            logger->info("Reading of corry file");
+
             // Read off output txt files, parse for Tracks, and load onto clipboard
             inputCorryFile.open(corryInputFileName.c_str(), std::ios::in);
             readCorryFile(inputCorryFile, trackDataClip);
             inputCorryFile.close();
-            
-            logger->info("Pushing the data onto the clipbaord");
+
             // Finally put data on the EventData clipboards
             eventDataClip->pushData(std::move(currFEEvents));
         }
@@ -322,7 +312,7 @@ namespace viz{
         memcpy(handle.data() + offset, &event.bcid, sizeof(uint16_t));  offset += sizeof(uint16_t);
         memcpy(handle.data() + offset, &event.nHits, sizeof(uint16_t)); offset += sizeof(uint16_t);
         if(event.hits.data())
-        memcpy(handle.data() + offset, event.hits.data(), event.hits.size() * sizeof(Hit));
+            memcpy(handle.data() + offset, event.hits.data(), event.hits.size() * sizeof(Hit));
     }
 
 
