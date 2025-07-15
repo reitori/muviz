@@ -147,6 +147,9 @@ namespace viz{
             return;
 
         auto start = std::chrono::steady_clock::now();
+
+        updateParticles(cam, dTime);
+
         std::pair<std::unique_ptr<FEEvents>, std::unique_ptr<TrackData>> batchData = m_cli->getEventBatch();
         std::unique_ptr<TrackData>& trackData = batchData.second;
 
@@ -245,7 +248,6 @@ namespace viz{
         
         batchData.first.reset(); batchData.second.reset();
 
-        updateParticles(cam, dTime);
         auto end = std::chrono::steady_clock::now();
         auto diff = end - start;
 
