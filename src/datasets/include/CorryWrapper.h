@@ -7,6 +7,7 @@
 #include <fstream>
 #include <regex>
 #include <ostream>
+#include <cstdlib>
 
 #include "util/include/ClipBoard.h"
 #include "datasets/include/DataBase.h"

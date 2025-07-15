@@ -132,7 +132,7 @@ namespace viz{
         corryMainFile << "[Corryvreckan]\n"
                       << "detectors_file = \"" << corryGeometryFileName << "\" \n"
                       << "output_directory = \"" << internalsPath.string() << "\" \n"
-                      << "library_directories = " << userCorryLibPath << "\n"
+                      << "library_directories = \"" << userCorryLibPath << "\"\n"
                       << "histogram_file = \"\"\n" 
                       << "log_level = \"ERROR\"\n\n";
  

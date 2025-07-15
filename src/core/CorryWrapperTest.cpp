@@ -9,6 +9,12 @@
 #include "YarrBinaryFile.h"
 #include "EventReconstructor.h"
 
+
+#include "TApplication.h"
+#include "TROOT.h"
+#include "TSystem.h"
+#include "TH1.h"
+
 using namespace viz;
 
 std::vector<std::ofstream> YARRoutputFiles;
@@ -29,6 +35,9 @@ void testThread(int i){
 }
 
 int main(int argc, char** argv){
+    ROOT::EnableThreadSafety();
+    ROOT::EnableImplicitMT();
+
     if(argc < 3){
         std::cout << "Please provide a configuration file path" << std::endl;
         return 0;
