@@ -2,6 +2,8 @@
 
 A visualization tool for ATLAS ITK pixel detectors.
 
+[![Demo Video](https://img.youtube.com/vi/K4evDcjJaR0/0.jpg)](https://www.youtube.com/watch?v=K4evDcjJaR0)
+
 ## Installation
 
 ```bash
