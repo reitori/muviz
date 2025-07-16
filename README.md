@@ -2,7 +2,7 @@
 
 A visualization tool for ATLAS ITK pixel detectors.
 
-[![Demo Video](https://img.youtube.com/vi/K4evDcjJaR0/0.jpg)](https://www.youtube.com/watch?v=K4evDcjJaR0)
+[![Demo Video](https://github.com/user-attachments/assets/2933b2e9-0c11-4dd9-ba3e-3b9bb5f7c0f5)](https://www.youtube.com/watch?v=K4evDcjJaR0)
 
 ## Installation
 
@@ -23,7 +23,8 @@ Installed binaries will be available in `visualizer/bin`, and can be executed wi
 ./bin/<executable> <args>
 ```
 
-## Troubleshooting
+## Troubleshooting!
+
 
 ### GUI rendering errors
 **Problem**: you cannot render GUI windows over SSH and see an error like this:
