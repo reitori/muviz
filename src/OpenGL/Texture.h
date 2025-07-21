@@ -31,14 +31,15 @@ namespace viz{
 		protected:
 			virtual void loadTexture() = 0;
 
+			GLenum type;
 			unsigned int textureID = 0;
 			std::string m_path, m_name;
 	};
 
 	class Texture2D : public Texture{
 		public:
-			Texture2D(const std::string path, const std::string name, bool mipmap = true);
-			Texture2D(uint16_t width, uint16_t height, std::string name, bool mipmap = true);
+			Texture2D(const std::string path, const std::string name, bool mipmap = true, bool setMultisample = false);
+			Texture2D(uint16_t width, uint16_t height, std::string name, bool mipmap = true, bool setMultisample = false);
 
 			Texture2D(const Texture2D& texture) = delete;
 			Texture2D& operator=(const Texture2D&) = delete; 
@@ -54,15 +55,20 @@ namespace viz{
 
 			unsigned char* getDataPointer() { return data;}
 			int getChannels() const { return m_nrChannel;}
+
+			inline uint16_t getWidth() {return m_width; }
+			inline uint16_t getHeight() { return m_height; }
 			
 			uint32_t m_TextureUnit;
+			uint8_t samples = 4;
 			bool generateMipmap;
 		protected:
 			void loadTexture() override;
 			void setDefaultParams();
 			
 			unsigned char* data = nullptr;
-			int m_width, m_height, m_nrChannel;
+			uint16_t m_width, m_height, m_nrChannel;
+			bool multisample = false;
 			std::string m_path, m_name;
 			GLenum m_internalFormat = GL_RGBA8;
             GLenum m_dataFormat = GL_RGBA;
