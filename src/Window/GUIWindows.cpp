@@ -127,9 +127,11 @@ namespace viz
                         if(m_RPressed){ //rotate camera
                             cam->rotateAxis(glm::normalize(glm::cross(cam->getFront(), disp)), 0.5f);
                         }else{ //otherwise displace
-                            cam->smoothDisplace(-disp, m_renderer->getDelTime());
+                            cam->displace(-disp, m_renderer->getDelTime());
                         }
 
+                        //I think this is a design flaw even if sorting when you only need to is more optimal
+                        //Maybe sort upon each render call that way you don't lose track of when you sort
                         m_renderer->sortTransparentObjects();
                     }
                 }  
@@ -143,7 +145,7 @@ namespace viz
                 if(m_mouseInWin){
                     Camera* cam = m_renderer->getCamera();
 
-                    cam->displace(cam->getFront() * 0.75f * e.getData()->floatPairedData.second);
+                    cam->displace(cam->getFront() * 0.75f * e.getData()->floatPairedData.second, m_renderer->getDelTime());
                     m_renderer->sortTransparentObjects();
                 }
                 return;
@@ -176,19 +178,85 @@ namespace viz
         }else{
             startCLI = false;
         }
-
-        ImGui::SliderFloat("Hit Duration", &hitDuration, 0.1f, 10.0f);
         
+        ImGui::Text("Track Duration:");
+        ImGui::SameLine();
+
+        if(hitDurIsIndefinite)
+            ImGui::BeginDisabled();
+
+        ImGui::PushItemWidth(ImGui::GetFontSize() * 5);
+        ImGui::InputInt("##hitDurMin", &hitDurMin);
+        ImGui::SameLine();
+        ImGui::TextUnformatted("min");
+        if(hitDurMin < 0) hitDurMin = 0;
+
+        ImGui::SameLine();
+        ImGui::PushItemWidth(ImGui::GetFontSize() * 5);
+        ImGui::InputInt("##hitDurSec", &hitDurSec);
+        ImGui::SameLine();
+        ImGui::TextUnformatted("sec");
+        if(hitDurSec < 0) hitDurSec = 0;
+
+        if(hitDurIsIndefinite)
+            ImGui::EndDisabled();
+
+        ImGui::SameLine();
+        ImGui::Checkbox("indefinite", &hitDurIsIndefinite);
+        ImGui::PopItemWidth();
+
+        Camera* cam = m_renderer->getCamera();
+        ImGui::Text("Camera Speed");
+        ImGui::SameLine();
+        ImGui::PushItemWidth(200.0f);
+        ImGui::SliderFloat("##CameraSpeed", &cam->speed, 1.0f, 100.0f, "%.2f");
+        ImGui::PopItemWidth();
+
+        ImGui::SameLine();
+        ImGui::Text("Cycle Path");
+        ImGui::SameLine();
+        if(goThroughPath)
+            ImGui::BeginDisabled();
+
+        ImGui::Checkbox("##CyclePath", &CycleCamPath);
+        if(CycleCamPath){
+            cam->cyclePath(m_renderer->getDelTime());
+        }
+
+        if(goThroughPath)
+            ImGui::EndDisabled();
+
+        if(CycleCamPath)
+            ImGui::BeginDisabled();
+
+        ImGui::SameLine();
+        ImGui::Text("Forward");
+        ImGui::SameLine();
+        ImGui::Checkbox("##ThroughPath", &goThroughPath);
+        if(goThroughPath){
+            if(cam->pathForward(m_renderer->getDelTime())){
+                cam->restartCamPath();
+            }
+        }
+
+        if(CycleCamPath)
+            ImGui::EndDisabled();
+
+        
+        hitDuration = 60 * hitDurMin + hitDurSec;
+
         std::vector<Chip>& chips = m_renderer->getDetector()->getChips();
         for(int i = 0; i < chips.size(); i++){
-            ImGui::Separator();
-            ImGui::Text("Name: %s", chips[i].name.c_str());
-            ImGui::Text("fe_id: %i", chips[i].fe_id);
-            ImGui::Text("Position: (%.2f, %.2f, %.2f)", chips[i].pos.x, chips[i].pos.y, chips[i].pos.z);
-            ImGui::Text("Hits: %lu", chips[i].hits);
+            if(ImGui::CollapsingHeader(chips[i].name.c_str())){
+                ImGui::Separator();
+                ImGui::Text("Name: %s", chips[i].name.c_str());
+                ImGui::Text("fe_id: %i", chips[i].fe_id);
+                ImGui::Text("Position: (%.2f, %.2f, %.2f)", chips[i].pos.x, chips[i].pos.y, chips[i].pos.z);
+                ImGui::Text("Hits: %lu", chips[i].hits);
 
-            if(chips[i].isHitMapEnabled()){
-                ImGui::Image((intptr_t)chips[i].getTexture()->getID(), ImVec2(chips[i].getMaxCols(), chips[i].getMaxRows()));
+                if(chips[i].isHitMapEnabled()){
+                    ImGui::Image((intptr_t)chips[i].getTexture()->getID(), ImVec2(chips[i].getMaxCols(), chips[i].getMaxRows()));
+                }
             }
         }
 

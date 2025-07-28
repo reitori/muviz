@@ -83,7 +83,10 @@ namespace viz{
             float color[4] = {0, 0, 0, 1};
             float worldRot = 0.0f;
             float hitDuration = 0.1f;
+            bool hitDurIsIndefinite = false;
             bool startCLI = false;
+            bool CycleCamPath = false;
+            bool goThroughPath = false;
 
             ManagerWindow() = default;
             ManagerWindow(const char* name, std::shared_ptr<Renderer> renderer);
@@ -95,6 +98,7 @@ namespace viz{
 
             virtual ~ManagerWindow() = default;
         private:
+            int hitDurMin{0}, hitDurSec{1};
             std::shared_ptr<Renderer> m_renderer;
 
             ImFont* largerFont;

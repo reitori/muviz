@@ -33,6 +33,7 @@ namespace viz{
         float lifetime, ndcDepth;
     };
 
+    //TODO: Change track length so not hardcoded and instead dynamic based on detector length
     class Detector{
         public:
             bool startCLI = false;
@@ -52,6 +53,7 @@ namespace viz{
             uint32_t totHits(); 
 
             float hitDuration = 0.5f;
+            bool trackIsImmortal = false;
         private:
             void updateParticles(const Camera& cam, const float& dTime);
             void configure();
@@ -77,6 +79,8 @@ namespace viz{
 
             std::function<void(system::event& e)> eventCallback;
 
+            int type = 0;
+            
             float totalupdatetime = 0.0f;
             float detectorLength;
             int totalupdateframes = 0;

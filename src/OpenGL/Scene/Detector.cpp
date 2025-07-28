@@ -143,13 +143,12 @@ namespace viz{
     }
 
     void Detector::update(const Camera& cam, const float& dTime){
+        updateParticles(cam, dTime);
+
         if(!m_cli->isRunning())
             return;
 
         auto start = std::chrono::steady_clock::now();
-
-        updateParticles(cam, dTime);
-
         std::pair<std::unique_ptr<FEEvents>, std::unique_ptr<TrackData>> batchData = m_cli->getEventBatch();
         std::unique_ptr<TrackData>& trackData = batchData.second;
 
@@ -234,10 +233,27 @@ namespace viz{
                     q = glm::normalize(q);
 
                     Particle trackPart;
+                    glm::vec4 color;
+
+                    if(type == 0){
+                        color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+                        type++;
+                    }
+                    else if(type ==1){
+                        color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+                        type++;
+                    }
+                    else if(type == 2){
+                        color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+                        type = 0;
+                    }
+                    
+
                     trackPart.pos = straight->point;
                     trackPart.transform = transform(size, q, straight->point);
-                    trackPart.color = glm::vec4(0.745f, 0.373f, 0.859f, 1.0f);
-                    trackPart.is_immortal = false;
+                    trackPart.color = color;
+                    //trackPart.color = glm::vec4(0.745f, 0.373f, 0.859f, 1.0f);
+                    trackPart.is_immortal = trackIsImmortal;
                     trackPart.lifetime = hitDuration;
                     trackPart.ndcDepth = 0.0f;
                     trackPart.isHit = false;
