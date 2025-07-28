@@ -1,10 +1,14 @@
 #include "OpenGL/Camera.h"
 
+namespace{
+    auto logger = logging::make_log("Camera");
+}
+
 namespace viz{
     Camera::Camera(){
         data.projection = glm::mat4(1.0f);
         data.orientation = glm::mat4(1.0f);
-        data.position = glm::vec3(0.0f, 0.0f, 1.0f);
+        data.position = glm::vec3(0.0f, 0.0f, 0.0f);
         data.front = glm::vec3(0.0f, 0.0f, -1.0f);
         data.up = glm::vec3(0.0f, 1.0f, 0.0f);
         data.right = glm::vec3(1.0f, 0.0f, 0.0f);
@@ -26,6 +30,130 @@ namespace viz{
         data.position = pos; 
     }
 
+    void Camera::setCamPath(const std::vector<CamPath>& paths){
+        for(auto& path : fullPath){
+            fullPath.push_back(path);
+            pathTimeRanges.push_back({totalPathTime, totalPathTime + path.timeDuration, fullPath.size() - 1});
+            totalPathTime += path.timeDuration;
+        }
+    }
+
+    void Camera::pushCamPath(const CamPath& path){
+        fullPath.push_back(path);
+        pathTimeRanges.push_back({totalPathTime, totalPathTime + path.timeDuration, fullPath.size() - 1});
+        totalPathTime += path.timeDuration;
+    }
+
+    void Camera::popCamPath(){
+        if(!fullPath.empty()){
+            totalPathTime -= fullPath.end()->timeDuration;
+            fullPath.pop_back();
+            pathTimeRanges.pop_back();
+            if(currPathIndex >= fullPath.size()){
+                currPathIndex = fullPath.size() - 1;
+            }
+        }   
+    }
+
+    void Camera::restartCamPath(){
+        currPathIndex = 0;
+        currPathTimeOffset = 0.0f;
+        totalElapsedPathTime = 0.0f;
+        currCyclePathDir = cyclePathDir::FORWARDS;
+    }
+
+    //TODO: Returns true when a cycle is completed. Do this by tracking how much distance camera has traveled along path
+    bool Camera::cyclePath(float delTime){
+        if(currCyclePathDir == cyclePathDir::FORWARDS){
+            return pathForward(delTime);
+        }
+        else{
+            return pathBackwards(delTime);
+        }
+    }
+
+    bool Camera::pathForward(float delTime){
+        if(fullPath.empty() || !enableCameraPath)
+            return true;
+
+        //Check to see if path is finished up
+        totalElapsedPathTime += delTime;
+        if(totalElapsedPathTime >= totalPathTime){
+            calcFromCamPath(fullPath.back(), 1.0f);
+            totalElapsedPathTime = totalPathTime;
+            currPathIndex = fullPath.size() - 1;
+            currCyclePathDir = cyclePathDir::BACKWARDS;
+            return true;
+        }
+
+        auto& currCurve = fullPath[currPathIndex];
+        float mapped_t = globalTimeFunc(totalElapsedPathTime / totalPathTime) * totalPathTime;
+
+        //Check to see if we have finished up the current path and move to the next
+        if(mapped_t - (globalTimeFunc(currPathTimeOffset / totalPathTime) * totalPathTime) > currCurve.timeDuration){
+            currPathTimeOffset += currCurve.timeDuration;
+            currPathIndex++;
+            currCurve = fullPath[currPathIndex];
+        }
+
+        float normalizedCurrCurveTime = (mapped_t - (globalTimeFunc(currPathTimeOffset / totalPathTime) * totalPathTime)) / currCurve.timeDuration;
+        calcFromCamPath(fullPath.at(currPathIndex), normalizedCurrCurveTime);
+
+        return false;
+    }
+
+    bool Camera::pathBackwards(float delTime){
+        if(fullPath.empty() || !enableCameraPath)
+            return true;
+
+        //Check to see if reverse path is finished
+        totalElapsedPathTime -= delTime;
+        if(totalElapsedPathTime < 0){
+            calcFromCamPath(fullPath.front(), 0.0f);
+            totalElapsedPathTime = 0.0f;
+            currPathIndex = 0;
+            currCyclePathDir = cyclePathDir::FORWARDS;
+            return true;
+        }
+
+        auto& currCurve = fullPath[currPathIndex];
+        float mapped_t = globalTimeFunc(totalElapsedPathTime / totalPathTime) * totalPathTime;
+
+        if(mapped_t - (globalTimeFunc(currPathTimeOffset / totalPathTime) * totalPathTime) < 0){
+            currPathIndex--;
+            currCurve = fullPath[currPathIndex];
+            currPathTimeOffset -= currCurve.timeDuration;
+        }
+
+        float normalizedCurrCurveTime = (mapped_t - (globalTimeFunc(currPathTimeOffset / totalPathTime) * totalPathTime)) / currCurve.timeDuration;
+        calcFromCamPath(fullPath.at(currPathIndex), normalizedCurrCurveTime);
+
+        return false;
+    }
+
+    //Treats fullPath as a paramaterized piecewise function of all of the CamPaths, where Domain=[0,1].
+    //Domain of the piecewise function is split up into segments based on order in
+    //which CamPaths are placed in fullPath as well as their associated timeDurations.
+    //i.e. if fullPath = {CamPath5sec, CamPath10sec}
+    //Then if normalizedPosition is in [0, 1/3], tracePath updates CameraOrientation based on CamPath5sec data
+    //     if normalizedPosition is in (1/3, 1), tracePath updates CameraOrientation based on CamPath10sec data
+    void Camera::tracePath(float normalizedPosition){
+        if(fullPath.empty() || !enableCameraPath)
+            return;
+
+        if(normalizedPosition < 0 || normalizedPosition > 1)
+            return;
+        float totalTime = normalizedPosition * totalPathTime;
+
+        auto it = std::lower_bound(pathTimeRanges.begin(), pathTimeRanges.end(), totalTime,
+            [](const Range& r, float t) {
+                return r.end <= t;
+            });
+        if (it != pathTimeRanges.end()){
+            calcFromCamPath(fullPath[it->index], (totalTime - it->start) / fullPath[it->index].timeDuration);
+        }
+    }
+
     void Camera::displace(glm::vec3 disp) {
         if(cameraLocked)
             return;
@@ -33,15 +161,11 @@ namespace viz{
         data.position += disp;
     }
 
-    void Camera::smoothDisplace(glm::vec3 disp, float delTime){
-        if(cameraLocked)
+    void Camera::displace(glm::vec3 direction, float delTime){
+         if(cameraLocked)
             return;
 
-        float speed = 1.25f; 
-        t += speed * delTime;
-        t = glm::clamp(t, 0.0f, 1.0f); // Keep t in [0,1]
-
-        data.position = glm::mix(data.position, data.position + disp, glm::smoothstep(0.0f, 1.0f, t));
+        data.position += glm::normalize(direction) * speed * delTime;
     }
 
     void Camera::setRotation(float rightAngle, float upAngle){
@@ -58,6 +182,7 @@ namespace viz{
         data.front = glm::vec3(x, y, z);
         updateOrientation();
     }
+
     void Camera::rotate(float dispRightAngle, float dispUpAngle) { 
         if(cameraLocked)
             return;
@@ -71,7 +196,8 @@ namespace viz{
 
         glm::vec3 front = glm::normalize(x+y+z);
 
-        if(glm::dot(front, glm::vec3(0.0f, 1.0f, 0.0f)) > 0.999f)
+        //Change rotations so lock occurs
+        if( glm::abs(glm::dot(front, glm::vec3(0.0f, 1.0f, 0.0f))) > 0.99f)
             data.front = glm::vec3(-data.front.x, data.front.y, -data.front.z);
         else{
             data.front = front;
@@ -109,24 +235,50 @@ namespace viz{
         return data.projection;
     }
 
-    inline void Camera::updateOrientation(){
-        glm::vec3 front = data.front;
-        glm::vec3 right = glm::normalize(glm::cross(front, glm::vec3(0.0f, 1.0f, 0.0f)));
-        glm::vec3 up = glm::normalize(glm::cross(right, front));
+    void Camera::calcFromCamPath(const CamPath& path, float normalized_time){
+        if(!path.position) //nullptr position and positive timeDuration => camera wait
+            return;
 
+        float mappedNormalizedTime = path.timeFunction(normalized_time);
+        data.position = path.position->at(mappedNormalizedTime); 
+        data.roll = path.rollAngleFunc(mappedNormalizedTime);
+        if(path.lookAtCurve){
+            data.front = glm::normalize(path.lookAtCurve->at(mappedNormalizedTime) - path.position->at(mappedNormalizedTime));
+        }else{
+            data.front = glm::normalize(path.lookAtPoint - path.position->at(mappedNormalizedTime));
+        }
+
+        if(!path.useWorldUp){
+            if(path.fixedUpVector != glm::vec3(0.0f, 0.0f, 0.0f)){
+                data.up = glm::normalize(path.fixedUpVector);
+                data.right = glm::cross(data.front, data.up);
+            }
+            else{
+                glm::mat4 rollMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(data.roll), data.front);
+                data.right = rollMatrix * (glm::vec4(-glm::normalize(path.position->derivative(mappedNormalizedTime)), 1.0f));
+                data.up = glm::cross(data.right, data.front);
+            }
+        }
+
+        updateOrientation(path.useWorldUp);
+    }
+
+    void Camera::updateOrientation(bool useWorldUp){
+        if(useWorldUp){
+            glm::mat4 rollMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(data.roll), data.front);
+            data.right = rollMatrix * glm::vec4(glm::normalize(glm::cross(data.front, worldUp)), 1.0f);
+            data.up = glm::normalize(glm::cross(data.right, data.front));
+        }
 
         //matrix is orthogonal with respect to normal dot product so transpose is inverse
-        data.orientation[0][0] = right.x;
-        data.orientation[1][0] = right.y;
-        data.orientation[2][0] = right.z;
-        data.orientation[0][1] = up.x;
-        data.orientation[1][1] = up.y;
-        data.orientation[2][1] = up.z;
-        data.orientation[0][2] = -front.x;
-        data.orientation[1][2] = -front.y;
-        data.orientation[2][2] = -front.z;
-
-        data.right = right;
-        data.up = up;
+        data.orientation[0][0] = data.right.x;
+        data.orientation[1][0] = data.right.y;
+        data.orientation[2][0] = data.right.z;
+        data.orientation[0][1] = data.up.x;
+        data.orientation[1][1] = data.up.y;
+        data.orientation[2][1] = data.up.z;
+        data.orientation[0][2] = -data.front.x;
+        data.orientation[1][2] = -data.front.y;
+        data.orientation[2][2] = -data.front.z;
     }
 }

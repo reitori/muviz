@@ -33,6 +33,7 @@ target_include_directories(VisualizerLib PUBLIC ${PROJECT_SOURCE_DIR}/src
     OpenGL/Scene/Detector.cpp
     OpenGL/Scene/Mesh.cpp
     OpenGL/Scene/Chip.cpp
+    OpenGL/Scene/Curve.cpp
     OpenGL/Camera.cpp
     OpenGL/Framebuffer.cpp
     OpenGL/Renderer.cpp
