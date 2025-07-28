@@ -67,7 +67,7 @@ namespace viz{
 			void setDefaultParams();
 			
 			unsigned char* data = nullptr;
-			uint16_t m_width, m_height, m_nrChannel;
+			int m_width, m_height, m_nrChannel;
 			bool multisample = false;
 			std::string m_path, m_name;
 			GLenum m_internalFormat = GL_RGBA8;

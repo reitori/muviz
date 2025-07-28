@@ -271,6 +271,10 @@ namespace viz{
     }
 
     void CorryWrapper::process(){
+
+        // long total_usTime = 0.0;
+        // uint32_t totalLoops = 0;
+
         while(isThreadRunning()){
             std::unique_ptr<FEEvents> currFEEvents = std::move(reconstructor->getEvents());
             if(!currFEEvents){
@@ -278,6 +282,8 @@ namespace viz{
                 continue;
             }
 
+            // totalLoops++;
+            // auto start = std::chrono::high_resolution_clock::now();
             for (int i = 0; i < totalFEs; i++) {
                 outputYARRFiles[i].open(outputYARRFileNames[i].c_str(), std::fstream::out | std::fstream::trunc);
                 auto& currEvents = (*currFEEvents)[i]->events;
@@ -310,7 +316,15 @@ namespace viz{
 
             // Finally put data on the EventData clipboards
             eventDataClip->pushData(std::move(currFEEvents));
+
+            // auto end = std::chrono::high_resolution_clock::now();
+            // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+            // long elapsedMicroseconds = static_cast<long>(duration.count());
+            // total_usTime += elapsedMicroseconds;
         }
+
+
+        // std::cout << total_usTime / totalLoops << std::endl;
     }
 
     void CorryWrapper::toMemoryBinary(std::vector<uint8_t> &handle, const Event& event){

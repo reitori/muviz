@@ -18,7 +18,7 @@ namespace viz{
         init(width, height);
     }
 
-    Framebuffer::Framebuffer(std::shared_ptr<Texture2D>& texture, bool setMultisample = false, bool useRenderbufferAttachment = true){
+    Framebuffer::Framebuffer(std::shared_ptr<Texture2D>& texture, bool setMultisample, bool useRenderbufferAttachment){
         m_init = false;
         m_multisample = setMultisample;
         m_useRenderbuffer = useRenderbufferAttachment;
@@ -87,8 +87,6 @@ namespace viz{
                 if(m_multisample) glRenderbufferStorageMultisample(GL_RENDERBUFFER, m_targetTexture->samples, GL_DEPTH24_STENCIL8, width, height);
                 glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_rbo);
             }
-        
-        glBindTexture(GL_TEXTURE_2D, 0);
 
         m_width = width;
         m_height = height;

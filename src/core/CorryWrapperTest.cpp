@@ -23,7 +23,6 @@ std::vector<std::unique_ptr<DataLoader>> dataLoaders;
 std::unique_ptr<VisualizerCli> cli;
 
 //For running tests
-std::vector<std::thread> threads;
 std::vector<std::pair<std::unique_ptr<FEEvents>, std::unique_ptr<TrackData>>> hsi;
 
 auto logger = logging::make_log("CLITest");
@@ -37,6 +36,7 @@ void testThread(int i){
 int main(int argc, char** argv){
     ROOT::EnableThreadSafety();
     ROOT::EnableImplicitMT();
+    TH1::AddDirectory(false);
 
     if(argc < 3){
         std::cout << "Please provide a configuration file path" << std::endl;
@@ -61,10 +61,6 @@ int main(int argc, char** argv){
         return 0;
     }
 
-    for(int i = 0; i < 10; i++){
-        threads.push_back(std::thread(&testThread, i));
-    }
-    
     cli = std::make_unique<VisualizerCli>();
     int cli_status = cli->init(argc, argv); 
     cli_status = cli->configure(); 
@@ -76,8 +72,16 @@ int main(int argc, char** argv){
 
     cli->start();
 
-    while(true){
+    int readEvents = 0;
+    while(readEvents < 9996){
         auto eventBatch = cli->getEventBatch();
+
+        if(!eventBatch.first){
+            continue;
+        }
+
+        readEvents += (eventBatch.first)->front()->size();
+
         if(eventBatch.second){
             TrackData* tracks = eventBatch.second.get();
             for(auto& track : *tracks){
@@ -92,7 +96,7 @@ int main(int argc, char** argv){
         }
     }
 
-    
-
+    std::cout << "Total read events: " << readEvents << std::endl;
+    cli->stop();    
     return 0;
 }   
