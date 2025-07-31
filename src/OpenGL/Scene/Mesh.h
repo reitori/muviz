@@ -23,8 +23,8 @@ namespace viz{
     class Mesh{
         public:
             Mesh() = default;
-            Mesh(const std::vector<Vertex>& vertices, const std::vector<float>& indices);
-            void setData(const std::vector<Vertex>& vertices, const std::vector<float>& indices);
+            Mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices);
+            void setData(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices);
 
             void allocateInstances(size_t numInstances);
             void setInstances(const std::vector<InstanceData>&& instances_vector);
@@ -37,7 +37,7 @@ namespace viz{
         private:
             void init();
             std::vector<Vertex> m_vertices;
-            std::vector<float> m_indices;
+            std::vector<GLuint> m_indices;
 
             GLuint m_VAO, m_VBO, m_EBO;
             GLuint m_instancesVBO;

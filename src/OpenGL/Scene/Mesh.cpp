@@ -56,14 +56,14 @@ namespace viz{
         m_isInit = true;
    }
 
-   Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<float>& indices){
+   Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices){
         m_vertices = vertices;
         m_indices = indices;
 
         init();
    }
 
-    void Mesh::setData(const std::vector<Vertex>& vertices, const std::vector<float>& indices){
+    void Mesh::setData(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices){
         m_vertices = vertices;
         m_indices = indices;
 
