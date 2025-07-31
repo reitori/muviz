@@ -48,7 +48,7 @@ namespace viz{
                 glVertexAttribDivisor(6, 1);
                 glVertexAttribDivisor(7, 1);
 
-                glBufferData(GL_ARRAY_BUFFER, sizeof(InstanceData) * m_instances.size(), m_instances.data(), GL_STREAM_DRAW);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(InstanceData) * instances.size(), instances.data(), GL_STREAM_DRAW);
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BARRIER_BIT, 0);
@@ -84,7 +84,7 @@ namespace viz{
     }
    
     void Mesh::allocateInstances(size_t numInstances){
-        m_instances.reserve(numInstances);
+        instances.reserve(numInstances);
 
         glBindVertexArray(m_VAO);
         glBindBuffer(GL_ARRAY_BUFFER, m_instancesVBO);
@@ -93,14 +93,14 @@ namespace viz{
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
-    void Mesh::setInstances(const std::vector<InstanceData>&& instances){
-        m_instances = std::move(instances);
+    void Mesh::setInstances(const std::vector<InstanceData>&& instances_vector){
+        instances = std::move(instances_vector);
         updateInstances();
     }
 
     void Mesh::setMeshModelData(const InstanceData& data){
-        m_instances.clear();
-        m_instances.push_back(data);
+        instances.clear();
+        instances.push_back(data);
 
         updateInstances();
     }
@@ -108,15 +108,15 @@ namespace viz{
     void Mesh::updateInstances(){
         glBindVertexArray(m_VAO); 
         glBindBuffer(GL_ARRAY_BUFFER, m_instancesVBO);
-        glBufferData(GL_ARRAY_BUFFER, static_cast<GLuint>(sizeof(InstanceData) * m_instances.size()), nullptr, GL_STREAM_DRAW);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, static_cast<GLuint>(sizeof(InstanceData) * m_instances.size()), m_instances.data());
+        glBufferData(GL_ARRAY_BUFFER, static_cast<GLuint>(sizeof(InstanceData) * instances.size()), nullptr, GL_STREAM_DRAW);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, static_cast<GLuint>(sizeof(InstanceData) * instances.size()), instances.data());
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
     void Mesh::render() const{
         glBindVertexArray(m_VAO);
-        glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLuint>(m_instances.size()), GL_UNSIGNED_INT, (GLvoid*)0, m_instances.size());
+        glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLuint>(instances.size()), GL_UNSIGNED_INT, (GLvoid*)0, instances.size());
         glBindVertexArray(0);
     }
     
@@ -199,16 +199,15 @@ namespace viz{
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);   
     }
 
-    void SimpleMesh::allocateInstances(std::uint16_t instances){
+    void SimpleMesh::allocateInstances(uint16_t numInstances){
         glBindVertexArray(m_VAO);
-        glBindBuffer(GL_ARRAY_BUFFER, m_instancesVBO);
-        glBufferData(GL_ARRAY_BUFFER, instances * sizeof(InstanceData), nullptr, GL_STREAM_DRAW);
-
+            glBindBuffer(GL_ARRAY_BUFFER, m_instancesVBO);
+            glBufferData(GL_ARRAY_BUFFER, static_cast<GLuint>(numInstances) * sizeof(InstanceData), nullptr, GL_STREAM_DRAW);
         glBindVertexArray(0);
     }
 
-    void SimpleMesh::setInstances(const std::vector<InstanceData>&& instances){
-        m_instancesToRender = instances.size();
+    void SimpleMesh::setInstances(const std::vector<InstanceData>&& instances_vet){
+        m_instancesToRender = m_instances.size();
         std::size_t vec4Size = sizeof(glm::vec4);
 
         m_instances = std::move(instances);

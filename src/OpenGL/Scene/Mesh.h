@@ -27,16 +27,15 @@ namespace viz{
             void setData(const std::vector<Vertex>& vertices, const std::vector<float>& indices);
 
             void allocateInstances(size_t numInstances);
-            void setInstances(const std::vector<InstanceData>&& instances);
+            void setInstances(const std::vector<InstanceData>&& instances_vector);
             void setMeshModelData(const InstanceData& data);
             void updateInstances();
 
             void render() const;
 
-            inline size_t getTotalInstances() const { return m_instances.size(); }
+            std::vector<InstanceData> instances;
         private:
             void init();
-            std::vector<InstanceData> m_instances;
             std::vector<Vertex> m_vertices;
             std::vector<float> m_indices;
 
