@@ -87,7 +87,7 @@ namespace viz{
         }
         
         void Texture2D::bindTexture() {
-            glBindTexture(type, textureID);
+            glBindTexture(type, textureID); 
         }
 
         void Texture2D::unbindTexture() {

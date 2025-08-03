@@ -1,82 +1,137 @@
 #include "OpenGL/TextureArray.h"
 
-namespace viz{
-    TextureArray::TextureArray(uint16_t width, uint16_t height, uint16_t layers, const std::string& name)
-        : m_width(width), m_height(height), m_layers(layers), m_name(name), m_arrayID(0) {}
+namespace{
+    auto logger = logging::make_log("Texture2DArray");
+}
 
-    TextureArray::~TextureArray() {
-        if (m_arrayID) {
-            glDeleteTextures(1, &m_arrayID);
-            m_arrayID = 0;
-        }
+namespace viz{ 
+    Texture2DArray::Texture2DArray(const std::vector<std::string>& paths, std::string name, bool mipmap){
+        m_paths = paths;
+        m_name = name;
+        generateMipmap = mipmap;
+
+        glGenTextures(1, &textureID);
+        loadFromPath(paths);
     }
 
-    void TextureArray::build() {
-        if (m_arrayID) glDeleteTextures(1, &m_arrayID);
-        glGenTextures(1, &m_arrayID);
+    Texture2DArray::Texture2DArray(uint16_t width, uint16_t height, uint8_t layers, std::string name, bool mipmap){
+        m_width = width;
+        m_height = height;
+        m_layers = layers;
+        m_name = name;
+        generateMipmap = mipmap;
+        
+        glGenTextures(1, &textureID);
+
         bind();
-        allocateStorage();
-        for (uint16_t i = 0; i < m_layers; ++i) {
-            uploadLayer(i);
-        }
+        setDefaultParams();
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, m_internalFormat, m_width, m_height, m_layers, 0, m_dataFormat, m_dataType, nullptr);
+        if(generateMipmap) glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
         unbind();
     }
 
-    void TextureArray::bind() const {
-        glBindTexture(GL_TEXTURE_2D_ARRAY, m_arrayID);
+    bool Texture2DArray::loadFromPath(const std::vector<std::string>& paths){
+        if (paths.empty()) {
+                logger->error("Texture2DArray '{}' load failed: No paths provided", m_name);
+                return false;
+            }
+
+            bind();
+            stbi_set_flip_vertically_on_load(true);
+
+            int w, h, channels;
+            unsigned char* firstData = stbi_load(paths[0].c_str(), &w, &h, &channels, 0);
+            if (!firstData) {
+                logger->error("Texture2DArray '{}' failed to load layer 0: {}", m_name, paths[0]);
+                return false;
+            }
+            setFormatFromChannels(channels);
+            m_width = w;
+            m_height = h;
+            m_layers = static_cast<int>(paths.size());
+
+            logger->info("Loading Texture2DArray '{}' with {} layers ({}x{})", m_name, m_layers, m_width, m_height);
+
+            glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, m_internalFormat, m_width, m_height, m_layers, 0, m_dataFormat, m_dataType, nullptr);
+ 
+            glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, m_width, m_height, 1, m_dataFormat, m_dataType, firstData);
+            stbi_image_free(firstData);
+
+            for (int i = 1; i < m_layers; ++i) {
+                unsigned char* data = stbi_load(paths[i].c_str(), &w, &h, &channels, 0);
+                if (!data) {
+                    logger->error("Texture2DArray '{}' failed to load layer {}: {}", m_name, i, paths[i]);
+                    continue;
+                }
+                if (w != m_width || h != m_height) {
+                    logger->warn("Texture2DArray '{}' layer {} size mismatch ({}x{}) - expected ({}x{})",
+                                 m_name, i, w, h, m_width, m_height);
+                    stbi_image_free(data);
+                    continue;
+                }
+                glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, m_width, m_height, 1, m_dataFormat, m_dataType, data);
+                stbi_image_free(data);
+            }
+
+            setDefaultParams();
+            if (generateMipmap) glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+
+            unbind();
+            logger->info("Texture2DArray '{}' loaded successfully", m_name);
+            return true;
     }
 
-    void TextureArray::unbind() const {
+    void Texture2DArray::bind(){
+        glBindTexture(GL_TEXTURE_2D_ARRAY, textureID);
+    }
+
+    void Texture2DArray::unbind(){
         glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
     }
 
-    void TextureArray::enable(Shader& shader, const std::string& uniformName, int unit) const {
-        glActiveTexture(GL_TEXTURE0 + unit);
+    void Texture2DArray::enable(Shader& shader, const std::string& uniformName, int pos){
+        glActiveTexture(GL_TEXTURE0 + pos);
         bind();
-        shader.setInt(uniformName.c_str(), unit);
+        shader.setInt(uniformName.c_str(), pos);
     }
 
-    void TextureArray::disable() const {
-        glActiveTexture(GL_TEXTURE0);
-        unbind();
+    void Texture2DArray::disable(){
+        
     }
 
-
-
-    Texture2DArray::Texture2DArray(uint16_t width, uint16_t height, uint16_t layers, const std::string& name) : TextureArray(width, height, layers, name) {
-        m_layersData.reserve(layers);
-        for (uint16_t i = 0; i < layers; ++i) {
-            m_layersData.emplace_back(std::make_unique<Texture2D>(width, height, name + "[" + std::to_string(i) + "]"));
+    void Texture2DArray::setDefaultParams(){
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        if (generateMipmap) {
+            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        } else {
+            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         }
     }
 
-    Texture2DArray::~Texture2DArray() = default;
-
-    Texture2D& Texture2DArray::operator[](size_t index) {
-        if (index >= m_layers) throw std::out_of_range("Texture2DArray index out of range");
-        return *m_layersData[index];
+    void Texture2DArray::setFormatFromChannels(int channels) {
+        switch (channels) {
+            case 4:
+                m_internalFormat = GL_RGBA8;
+                m_dataFormat = GL_RGBA;
+                break;
+            case 3:
+                m_internalFormat = GL_RGB8;
+                m_dataFormat = GL_RGB;
+                break;
+            case 2:
+                m_internalFormat = GL_RG8;
+                m_dataFormat = GL_RG;
+                break;
+            case 1:
+                m_internalFormat = GL_R8;
+                m_dataFormat = GL_RED;
+                break;
+            default:
+                logger->warn("Texture2DArray '{}' unknown channel count: {}", m_name, channels);
+        }
     }
 
-    const Texture2D& Texture2DArray::operator[](size_t index) const {
-        if (index >= m_layers) throw std::out_of_range("Texture2DArray index out of range");
-        return *m_layersData[index];
-    }
-
-    void Texture2DArray::allocateStorage() {
-        int channels = getChannelCount();
-        GLenum internalFormat = (channels == 4 ? GL_RGBA8 : GL_RGB8);
-        glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, internalFormat, m_width, m_height, m_layers);
-    }
-
-    void Texture2DArray::uploadLayer(uint16_t index) {
-        m_layersData[index] = std::make_unique<Texture2D>(m_width, m_height, m_name + "[" + std::to_string(index) + "]");
-        int channels = getChannelCount();
-        GLenum format = (channels == 4 ? GL_RGBA : GL_RGB);
-        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, index, m_width, m_height, 1, format, GL_UNSIGNED_BYTE,
-                        m_layersData[index]->getDataPointer());
-    }
-
-    int Texture2DArray::getChannelCount() const {
-        return m_layersData.empty() ? 3 : m_layersData[0]->getChannels();
-    }
 }

@@ -7,42 +7,7 @@ namespace {
 //TODO: Move matrix computations to GPU. Main bottleneck right now is the amount of CPU computation for particle rendering.
 
 namespace viz{
-    std::vector<SimpleVertex> CubeVertices = {
-        // Front Vertices //Color
-        {glm::vec3(-1.0f, -1.0f,  1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)},
-        {glm::vec3(1.0f, -1.0f,  1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)},
-        {glm::vec3(1.0f,  1.0f,  1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)},
-        {glm::vec3(-1.0f,  1.0f,  1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f,0.05f)},
-        // Back Vertices  //Color
-        {glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)},
-        {glm::vec3(1.0f, -1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)},
-        {glm::vec3(1.0f,  1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)},
-        {glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.05f)}
-    };
-
-    std::vector<GLuint> CubeIndices = {
-        // front
-        0, 1, 2,
-        2, 3, 0,
-        // right
-        1, 5, 6,
-        6, 2, 1,
-        // back
-        7, 6, 5,
-        5, 4, 7,
-        // left
-        4, 0, 3,
-        3, 7, 4,
-        // bottom
-        4, 5, 1,
-        1, 0, 4,
-        // top
-        3, 2, 6,
-        6, 7, 3
-    };
-    
     Detector::Detector(){
-        CubeMesh = SimpleMesh(CubeVertices, CubeIndices, true);
         ParticlesContainer.resize(totalParticles);
         m_cli; 
     }
@@ -50,6 +15,7 @@ namespace viz{
     void Detector::init(const std::shared_ptr<VisualizerCli>& cli){
         m_cli = cli;
 
+        logger->info("Initializing detector");
 
         for(int i = 0; i < cli->getTotalFEs(); i++) {
             const json& config = cli->getConfig(i);
@@ -120,11 +86,13 @@ namespace viz{
             Particle tempPart;
             tempPart.pos = currChip.pos;
             tempPart.transform = tempTfm;
-            tempPart.color = glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.25f);
+            tempPart.color = glm::vec4(0.3921f, 0.3921f, 0.3921f, 0.65f);
             tempPart.is_immortal = true;
             tempPart.lifetime = 100.0f;
             tempPart.ndcDepth = 0.0f;
             ParticlesContainer[findUnusedParticle()] = tempPart;
+
+            std::cout << "Chip " << i << " has pos: " << currChip.pos.x << " " << currChip.pos.y << " " << currChip.pos.z << std::endl;
         };
 
         //Find length of detector
@@ -282,13 +250,13 @@ namespace viz{
     void Detector::render(const Shader& shader){
         glEnable(GL_BLEND);
         glDepthMask(GL_FALSE);
-        CubeMesh.render(shader);
+        SimpleCubeMesh.render(shader);
         glDepthMask(GL_TRUE);
         glDisable(GL_BLEND);
     }
 
     void Detector::updateParticles(const Camera& cam, const float& dTime){
-        CubeMesh.m_instances.clear();
+        SimpleCubeMesh.m_instances.clear();
         for(int i = 0; i < ParticlesContainer.size(); i++){
             Particle& p = ParticlesContainer[i];
 
@@ -309,7 +277,7 @@ namespace viz{
                             data.color = glm::vec4(p.color.x, p.color.y, p.color.z, p.lifetime / hitDuration);
                         }
 
-                        CubeMesh.m_instances.push_back(data);
+                        SimpleCubeMesh.m_instances.push_back(data);
                     }
                     else{
                         p.ndcDepth = -1.0f;
@@ -323,10 +291,10 @@ namespace viz{
                 InstanceData data;
                 data.transform = p.transform;
                 data.color = p.color;
-                CubeMesh.m_instances.push_back(data);
+                SimpleCubeMesh.m_instances.push_back(data);
             }
         }
-        CubeMesh.updateInstances();
+        SimpleCubeMesh.updateInstances();
     }
 
     int Detector::findUnusedParticle(){
@@ -366,7 +334,7 @@ namespace viz{
 
         tempTfm = glm::toMat4(args_quat) * tempTfm;
         tempTfm = glm::translate(glm::mat4(1.0f), pos) * tempTfm;
-        return tempTfm;
+        return globalDetectorTransformation * tempTfm;
     }
     
 
@@ -410,6 +378,6 @@ namespace viz{
         tempTfm = rot * tempTfm;
         tempTfm = glm::translate(glm::mat4(1.0f), pos) * tempTfm;
 
-        return tempTfm;
+        return globalDetectorTransformation * tempTfm;
     }
 }

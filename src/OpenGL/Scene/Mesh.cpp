@@ -31,16 +31,16 @@ namespace viz{
                 glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)0); //color
 
                 glEnableVertexAttribArray(4); //Model transformation matrix
-                glVertexAttribPointer(4, 4, GL_FALSE, GL_FLOAT, sizeof(InstanceData), (void*)(vec4Size));
+                glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)(vec4Size));
  
                 glEnableVertexAttribArray(5);
-                glVertexAttribPointer(5, 4, GL_FALSE, GL_FLOAT, sizeof(InstanceData), (void*)(2 * vec4Size));
+                glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)(2 * vec4Size));
 
                 glEnableVertexAttribArray(6);
-                glVertexAttribPointer(6, 4, GL_FALSE, GL_FLOAT, sizeof(InstanceData), (void*)(3 * vec4Size));
+                glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)(3 * vec4Size));
 
                 glEnableVertexAttribArray(7);
-                glVertexAttribPointer(7, 4, GL_FALSE, GL_FLOAT, sizeof(InstanceData), (void*)(4 * vec4Size));
+                glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)(4 * vec4Size));
 
                 glVertexAttribDivisor(3, 1);
                 glVertexAttribDivisor(4, 1);
@@ -206,11 +206,11 @@ namespace viz{
         glBindVertexArray(0);
     }
 
-    void SimpleMesh::setInstances(const std::vector<InstanceData>&& instances_vet){
+    void SimpleMesh::setInstances(const std::vector<InstanceData>&& instances_vector){
         m_instancesToRender = m_instances.size();
         std::size_t vec4Size = sizeof(glm::vec4);
 
-        m_instances = std::move(instances);
+        m_instances = std::move(instances_vector);
         updateInstances();
     }
 

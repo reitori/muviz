@@ -1,36 +1,33 @@
-#ifndef TEXTUREARRAY_H
-#define TEXTUREARRAY_H
+#ifndef CUBEMAP_H
+#define CUBEMAP_H
 
-#include "stb_image.h"
-
-#include <string>
-#include <vector>
-
-#include "OpenGL/Shader.h"
+#include "OpenGL/Texture.h"
 
 namespace viz{
-    class Texture2DArray{
+    class Cubemap{
         public:
-            Texture2DArray(const Texture2DArray& textureArray) = delete;
-            Texture2DArray& operator=(const Texture2DArray&) = delete;
+            Cubemap(const Cubemap& textureArray) = delete;
+            Cubemap& operator=(const Cubemap&) = delete;
 
-            Texture2DArray(const std::vector<std::string>& paths, std::string name, bool mipmap = true);
-            Texture2DArray(uint16_t width, uint16_t height, uint8_t layer, std::string name, bool mipmap = true);
+            Cubemap(const std::vector<std::string>& paths, std::string name);
+            Cubemap(uint16_t width, uint16_t height, std::string name);
 
             bool loadFromPath(const std::vector<std::string>& paths);
+            bool success() { return loadSuccessful; } 
 
             void bind();
             void unbind();
 
             void enable(Shader& shader, const std::string& uniformName, int pos);
-            void disable();
+
+            ~Cubemap();
         private:
             void setDefaultParams();
             void setFormatFromChannels(int channels);
 
+            bool loadSuccessful = true;
 			unsigned char* data = nullptr;
-			int m_width, m_height, m_layers, m_nrChannel;
-			bool generateMipmap;
+			int m_width, m_height, m_nrChannel;
 			GLenum m_internalFormat = GL_RGBA8;
             GLenum m_dataFormat = GL_RGBA;
 			GLenum m_dataType = GL_UNSIGNED_BYTE;

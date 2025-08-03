@@ -17,6 +17,7 @@
 namespace viz{
     class GUIWindow : public Window{
         public:
+            friend class GUIManager;
             GUIWindow() = delete;
             GUIWindow(const char* name, ImGuiWindowFlags windowFlags = 0) : Window(name), m_windowFlags(windowFlags) {}
 
@@ -57,12 +58,12 @@ namespace viz{
     class SceneWindow : public GUIWindow {
         public:
             SceneWindow() = delete;
-            SceneWindow(const char* name, std::shared_ptr<Renderer> renderer, ImGuiWindowFlags windowFlags = 0) : GUIWindow(name, windowFlags),  m_renderer(renderer) {};
+            SceneWindow(const char* name, ImGuiWindowFlags windowFlags = 0);
 
             void init() override {}
             void onEvent(const system::event& e) override;
-
-            void attachRenderer(std::shared_ptr<Renderer> renderer) {m_renderer = renderer;}
+            std::shared_ptr<Renderer> getRenderer() { return m_renderer; }
+           
             virtual ~SceneWindow() = default;
         private:
             std::shared_ptr<Renderer> m_renderer;

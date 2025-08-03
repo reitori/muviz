@@ -10,6 +10,8 @@ uniform mat4 uModel;
 uniform mat4 uView;
 uniform mat4 uProj;
 uniform bool uIsInstanced;
+uniform bool uUseGlobalColor;
+uniform vec4 uGlobalColor;
 
 out vec4 fragOut;
 
@@ -17,6 +19,6 @@ void main()
 {
    mat4 modelTransform = uIsInstanced ? aInstanceModel : uModel;
    gl_Position = uProj * uView * modelTransform * vec4(aPos, 1.0);
-   fragOut = uIsInstanced ? aInstanceFrag : aFrag;
+   fragOut = uUseGlobalColor ? uGlobalColor : (uIsInstanced ? aInstanceFrag : aFrag);
 }
 

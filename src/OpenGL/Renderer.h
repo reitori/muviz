@@ -8,11 +8,13 @@
 #include "OpenGL/Shader.h"
 #include "OpenGL/Camera.h"
 #include "OpenGL/Scene/Detector.h"
+#include "OpenGL/Scene/Skybox.h"
 
 #include "Events/Event.h"
 
 #include <glm/glm.hpp>
 #include <chrono>
+#include <vector>
 
 namespace viz{
 
@@ -52,11 +54,14 @@ namespace viz{
             void sortTransparentObjects();
 
             double getDelTime() const { return delTime; }
+            
+            bool enableSkybox;
         private:
             friend class Application;
             std::shared_ptr<Detector> m_detector;
             std::unique_ptr<Framebuffer> m_framebuffer;
             std::unique_ptr<Framebuffer> m_screenFramebuffer;
+            std::unique_ptr<Skybox> m_skybox;
             std::vector<std::shared_ptr<Curve>> m_curves;
 
             std::string m_currCam;

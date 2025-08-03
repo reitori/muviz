@@ -93,7 +93,7 @@ namespace viz{
             cyclePathDir currCyclePathDir = cyclePathDir::FORWARDS;
 
             //Describes pitch
-            glm::vec3 worldUp = glm::vec3(0.0f, 0.0f, 1.0f);
+            glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
         private:
             struct Range{
                 float start;

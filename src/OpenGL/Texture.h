@@ -7,7 +7,7 @@
 #include "stb_image.h"
 #include "OpenGL/Shader.h"
 
-
+//TODO: Create a Texture manager class that manages all textures and prevents naming clashes and texture unit clashes
 namespace viz{
 	class Texture{
 		public:

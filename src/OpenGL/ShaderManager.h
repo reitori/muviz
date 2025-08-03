@@ -15,6 +15,7 @@ namespace viz{
             static bool addShader(const std::shared_ptr<Shader>& shader);
             static std::shared_ptr<Shader> get(const std::string& name);
         private:
+            static void tryShader(const std::shared_ptr<Shader>& shader);
             static std::unordered_map<std::string, std::shared_ptr<Shader>> m_Shaders;
     };
 }

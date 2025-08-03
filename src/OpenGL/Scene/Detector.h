@@ -5,6 +5,8 @@
 #include "OpenGL/Scene/Mesh.h"
 #include "OpenGL/Scene/Chip.h"
 
+#include "OpenGL/Object/Cube.h"
+
 #include "Events/ParticleEvent.h"
 #include "OpenGL/Camera.h"
 
@@ -20,9 +22,6 @@
 #include "CircularBuffer.h"
 
 namespace viz{
-    extern std::vector<SimpleVertex> CubeVertices;
-    extern std::vector<GLuint> CubeIndices;
-
     struct Particle{
         glm::vec3 pos;
         glm::mat4 transform;
@@ -52,6 +51,7 @@ namespace viz{
 
             uint32_t totHits(); 
 
+            glm::mat4 globalDetectorTransformation = glm::mat4(1.0f);
             float hitDuration = 0.5f;
             bool trackIsImmortal = false;
         private:
@@ -71,7 +71,7 @@ namespace viz{
             std::vector<Chip> m_chips;
             std::vector<Particle> ParticlesContainer; //Geometry -- All the chips and hits are rendered as particles until I fix the rendering architecture
 
-            SimpleMesh CubeMesh;
+            SimpleMesh SimpleCubeMesh = SimpleMesh(SimpleCubeVertices, SimpleCubeIndices, true);
             std::size_t startOfHitBuffer = 0;
 
             glm::vec3 hitScale = glm::vec3(0.05f, 0.05f, 0.05f);
@@ -80,7 +80,6 @@ namespace viz{
             std::function<void(system::event& e)> eventCallback;
 
             int type = 0;
-            
             float totalupdatetime = 0.0f;
             float detectorLength;
             int totalupdateframes = 0;

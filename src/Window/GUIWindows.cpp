@@ -70,16 +70,21 @@ namespace viz
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     }
 
+    SceneWindow::SceneWindow(const char* name, ImGuiWindowFlags windowFlags) : GUIWindow(name, windowFlags){
+        m_renderer = std::make_shared<Renderer>(1, 1); //Arbitrary size that is updated onRender()
+    }
+
     void SceneWindow::onRender(){
         if(m_renderer){
             ImVec2 windim = ImGui::GetContentRegionAvail();
             m_currPos = ImGui::GetWindowPos();
             m_currSize = ImGui::GetWindowSize();
 
-            glViewport(0, 0, windim.x, windim.y);
             if(windim.x != m_renderer->getWidth() || windim.y != m_renderer->getHeight()){
                 m_renderer->resize(windim.x, windim.y);
             }
+
+            m_renderer->render();
 
             ImVec2 topRight = ImVec2(m_currPos.x + m_currSize.x, m_currPos.y + m_currSize.y);
             ImGui::GetWindowDrawList()->AddImage(m_renderer->getTexID(), m_currPos, topRight, ImVec2(0, 1), ImVec2(1, 0));

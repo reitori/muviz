@@ -87,6 +87,7 @@ namespace viz{
                 if(m_multisample) glRenderbufferStorageMultisample(GL_RENDERBUFFER, m_targetTexture->samples, GL_DEPTH24_STENCIL8, width, height);
                 glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_rbo);
             }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         m_width = width;
         m_height = height;

@@ -13,13 +13,13 @@ namespace viz{
 
         auto mainShader = std::make_shared<Shader>(true, "main", execPath + "/assets/shaders/MainVertex.glsl", execPath + "/assets/shaders/MainFragment.glsl");
         auto hitmapShader = std::make_shared<Shader>(true, "hitmap", execPath + "/assets/shaders/HitMapVertex.glsl", execPath + "/assets/shaders/HitMapFragment.glsl");
+        auto lineShader = std::make_shared<Shader>(true, "line", execPath + "/assets/shaders/LineVertex.glsl", execPath + "/assets/shaders/LineFragment.glsl");
+        auto skyShader = std::make_shared<Shader>(true, "skybox", execPath + "/assets/shaders/SkyboxVertex.glsl", execPath + "/assets/shaders/SkyboxFragment.glsl");
 
-        if(!addShader(mainShader))
-            logger->error("Could not add Main Shader to ShaderManager -- ensure that assets folder is within the same directory as executable");
-        if(!addShader(hitmapShader))
-            logger->error("Could not add HitMap Shader to ShaderManager -- ensure that assets folder is within the same directory as executable");
-
-        logger->info("Added Main Shader and HitMap Shader to the ShaderManager");
+        tryShader(mainShader);
+        tryShader(hitmapShader);
+        tryShader(lineShader);
+        tryShader(skyShader);
     }
 
     bool ShaderManager::addShader(const std::shared_ptr<Shader>& shader){
@@ -38,6 +38,14 @@ namespace viz{
         }
         else{
             return nullptr;
+        }
+    }
+
+    void ShaderManager::tryShader(const std::shared_ptr<Shader>& shader){
+        if(!addShader(shader)){
+            logger->error("Could not add {} Shader to ShaderManager -- ensure that assets folder is within the same directory as executable", shader->m_name);
+        }else{
+            logger->info("Added {} Shader to the shader manager", shader->m_name);
         }
     }
 }
