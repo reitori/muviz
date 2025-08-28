@@ -56,6 +56,8 @@ namespace cli_helpers {
 }
 
 
+using EventBatch = std::pair<std::unique_ptr<FEEvents>, std::unique_ptr<TrackData>>;
+
 class VisualizerCli {
     public:
         VisualizerCli();

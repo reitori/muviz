@@ -40,7 +40,7 @@ namespace viz
             ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Down, 0.25f, &dock_id_down, &dockspace_id);
                         // we now dock our windows into the docking node we made above
             ImGui::DockBuilderDockWindow("Manager", dock_id_right);
-            ImGui::DockBuilderDockWindow("Console", dock_id_down);
+            ImGui::DockBuilderDockWindow("Scrubber Window", dock_id_down);
             ImGui::DockBuilderDockWindow("Scene", dockspace_id);
             ImGui::DockBuilderFinish(dockspace_id);
         ImGui::End();
@@ -263,9 +263,7 @@ namespace viz
                     ImGui::Image((intptr_t)chips[i].getTexture()->getID(), ImVec2(chips[i].getMaxCols(), chips[i].getMaxRows()));
                 }
             }
-        }
-
-        
+        } 
     }
 
     void ConsoleWindow::onRender(){
@@ -295,5 +293,109 @@ namespace viz
         va_end(args);
         lines.push_back(buf);
         ScrollToBottom = true;
+    }
+
+    void ScrubberWindow::onRender(){
+        // Use the entire window as the scrubber surface
+        ImVec2 p0 = ImGui::GetCursorScreenPos();
+        ImVec2 p1 = ImVec2(p0.x + ImGui::GetContentRegionAvail().x,
+                        p0.y + ImGui::GetContentRegionAvail().y);
+        ImDrawList* dl = ImGui::GetWindowDrawList();
+
+        // Background
+        dl->AddRectFilled(p0, p1, IM_COL32(40, 40, 40, 255));
+
+        auto& ebt = m_detector->eventBatchTimestamps;
+        bool ebtWidthDefined = m_detector->eventBatchTimestamps.getSize() >= 2;
+        double timeline_start = ebtWidthDefined ? std::chrono::duration<double>(ebt[0].second - ApplicationStartTimePoint).count() : 0;
+        double timeline_end   =  std::chrono::duration<double>(std::chrono::steady_clock::now()- ApplicationStartTimePoint).count();
+        double playhead_time   =  ebtWidthDefined ? std::chrono::duration<double>(m_detector->timeSincePlaybackReset - ApplicationStartTimePoint).count() : timeline_end;
+
+        // Helper: map time to x
+        auto TimeToScreen = [&](float t) {
+            float norm = (t - timeline_start) / (timeline_end - timeline_start);
+            return p0.x + norm * (p1.x - p0.x);
+        };
+        auto ScreenToTime = [&](float x) {
+            float norm = (x - p0.x) / (p1.x - p0.x);
+            return timeline_start + norm * (timeline_end - timeline_start);
+        };
+
+        // Draw ticks
+        float total_range = timeline_end - timeline_start;
+
+        float pixels_per_second = (p1.x - p0.x) / total_range;
+        float min_label_spacing_px = 80.0f; // Minimum pixel gap between labels
+        float raw_spacing_seconds = min_label_spacing_px / pixels_per_second;
+
+        // Round spacing to a “nice” value
+        // Multiples of 1, 3, 5, 10, 15, 30 seconds, then minutes
+        float nice_steps[] = {1, 3, 5, 10, 15, 30, 60, 120, 300, 600}; 
+        float tick_spacing = nice_steps[0];
+        for (float step : nice_steps) {
+            if (step >= raw_spacing_seconds) {
+                tick_spacing = step;
+                break;
+            }
+        }
+
+        for (float t = floorf(timeline_start / tick_spacing) * tick_spacing; t <= timeline_end; t += tick_spacing){
+            float x = TimeToScreen(t);
+            dl->AddLine(ImVec2(x, p0.y), ImVec2(x, p1.y), IM_COL32(200, 200, 200, 100));
+
+            char buf[32];
+            int minutes = (int)t / 60;
+            int seconds = (int)fabsf(t) % 60;
+            snprintf(buf, sizeof(buf), "%02d:%02d", minutes, seconds);
+
+            dl->AddText(ImVec2(x + 2, p0.y + 2), IM_COL32(220, 220, 220, 255), buf);
+        }
+
+        // Draw events
+        for (int i = 0; i < ebt.getSize(); i++) {
+            double eventTime = std::chrono::duration<double>(ebt[i].second - ApplicationStartTimePoint).count();
+            float ex0 = TimeToScreen(eventTime);
+            float ex1 = TimeToScreen(eventTime + 0.1);
+            dl->AddRectFilled(ImVec2(ex0, p0.y + 20), ImVec2(ex1, p1.y - 5), IM_COL32(150, 180, 220, 255), 3.0f);
+        }
+
+        // Interactions
+        ImGuiIO& io = ImGui::GetIO();
+        bool hovered = ImGui::IsWindowHovered();
+
+        if (hovered) {
+            // Drag playhead
+            if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+                playhead_time = ScreenToTime(io.MousePos.x);
+                auto sinceFirstOnEBT = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::duration<double>(playhead_time - timeline_start));
+                if(ebtWidthDefined) m_detector->setPlayback(ebt[0].second + sinceFirstOnEBT);
+                if(io.MousePos.x / (p1.x - p0.x) > 0.985){
+                    m_detector->setRealtime();
+                }
+            }
+            // Zoom
+            if (io.MouseWheel != 0.0f) {
+                float zoom_factor = powf(0.9f, io.MouseWheel);
+                float mid_time = ScreenToTime(io.MousePos.x);
+                float range_left = (mid_time - timeline_start) * zoom_factor;
+                float range_right = (timeline_end - mid_time) * zoom_factor;
+                timeline_start = mid_time - range_left;
+                timeline_end   = mid_time + range_right;
+            }
+            // Pan
+            if (ImGui::IsMouseDragging(ImGuiMouseButton_Middle)) {
+                float dt = io.MouseDelta.x / (p1.x - p0.x) * (timeline_end - timeline_start);
+                timeline_start -= dt;
+                timeline_end   -= dt;
+            }
+        }
+
+
+        // Draw playhead
+        float px = TimeToScreen(playhead_time);
+        if(m_detector->isRealtime()){ //Clamp to end if realtime
+            px = p1.x;
+        }
+        dl->AddLine(ImVec2(px, p0.y), ImVec2(px, p1.y), IM_COL32(255, 0, 0, 255), 2.0f);
     }
 }

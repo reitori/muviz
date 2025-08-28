@@ -41,6 +41,10 @@ namespace viz{
 
             void init(const std::shared_ptr<VisualizerCli>& cli);
 
+            void setPlayback(std::chrono::steady_clock::time_point timePoint);
+            void setRealtime() { useEventTimeStorageHead = true; }
+            bool isRealtime() { return useEventTimeStorageHead; }
+
             void update(const Camera& cam, const float& dTime);
             void updateHitDurations(float dur);
             void setEventCallback(const std::function<void(system::event& e)>& callback) { eventCallback = callback; }
@@ -54,6 +58,10 @@ namespace viz{
             glm::mat4 globalDetectorTransformation = glm::mat4(1.0f);
             float hitDuration = 0.5f;
             bool trackIsImmortal = false;
+ 
+            //Stores the eventbatch as well as the timestamp of when it was received by the Detector from CorryWrapper
+            CircularBuffer<std::pair<EventBatch, std::chrono::steady_clock::time_point>> eventBatchTimestamps;
+            std::chrono::steady_clock::time_point timeSincePlaybackReset; //Inremented time since last playback
         private:
             void updateParticles(const Camera& cam, const float& dTime);
             void configure();
@@ -83,6 +91,10 @@ namespace viz{
             float totalupdatetime = 0.0f;
             float detectorLength;
             int totalupdateframes = 0;
+
+            //For indexing into eventTimeStorage
+            bool useEventTimeStorageHead = true;
+            size_t lastEventBatchTimestampIndex = 0;
     };
 }
 

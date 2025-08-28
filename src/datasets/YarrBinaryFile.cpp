@@ -61,8 +61,6 @@ namespace viz{
         // block timeout
         if(config.contains("block_timeout"))
             block_timeout = (unsigned)config["block_timeout"];
-            else
-            block_timeout = 100; // microseconds
         
         // max_events_per_block
         if(config.contains("max_events_per_block"))
@@ -96,8 +94,11 @@ namespace viz{
             // logger->debug("[{}]: batch variables: fh {} rt {} np {} rs {}", name, (bool)fileHandle, (bool)run_thread, (bool)(curEvents != nullptr), (bool)read_success);
             read_success = fromFile();
             // logger->debug("[{}]: batch after variables: rm {} fh {} rt {} np {} rs {}", name, file_rm, (bool)fileHandle, (bool)run_thread, (bool)(curEvents != nullptr), (bool)read_success);
-            if(curEvents->size() == max_events_per_block)
+            if(curEvents->size() == max_events_per_block){
+                //hush
+                std::this_thread::sleep_for(std::chrono::milliseconds(block_timeout));
                 break;
+            }
         }
     }
 

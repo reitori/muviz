@@ -7,7 +7,7 @@ namespace {
 //TODO: Move matrix computations to GPU. Main bottleneck right now is the amount of CPU computation for particle rendering.
 
 namespace viz{
-    Detector::Detector(){
+    Detector::Detector() : eventBatchTimestamps(10){
         ParticlesContainer.resize(totalParticles);
         m_cli; 
     }
@@ -16,6 +16,21 @@ namespace viz{
         m_cli = cli;
 
         logger->info("Initializing detector");
+
+        auto masterConf = cli->getMasterConfig();
+        if(masterConf.contains("viz_config")){
+            //This parameter "total_detector_eventblocks" determines the size of
+            //the CircularBuffer -- eventBatchTimestamps
+            //Currently timing information is recorded inside of the detector update
+            //when receiving event batches from the CorryWrapper. This is okay for cosmics
+            //where the rate is low and when we don't want to worry about precise timing information
+            //But at high-rate we might want finer timing information. This would require us to change
+            //some code in the EventLoaderYarr module to get timing information down
+            if(masterConf["viz_config"].contains("total_detector_eventblocks") && (masterConf["viz_config"])["total_detector_eventblocks"].is_number_unsigned()){
+                unsigned int totalMemorySize = (masterConf["viz_config"])["total_detector_eventblocks"];
+                eventBatchTimestamps = CircularBuffer<std::pair<EventBatch, std::chrono::steady_clock::time_point>>(totalMemorySize);
+            }
+        }
 
         for(int i = 0; i < cli->getTotalFEs(); i++) {
             const json& config = cli->getConfig(i);
@@ -92,7 +107,6 @@ namespace viz{
             tempPart.ndcDepth = 0.0f;
             ParticlesContainer[findUnusedParticle()] = tempPart;
 
-            std::cout << "Chip " << i << " has pos: " << currChip.pos.x << " " << currChip.pos.y << " " << currChip.pos.z << std::endl;
         };
 
         //Find length of detector
@@ -110,18 +124,82 @@ namespace viz{
         logger->info("Detector initialized with {0} chips", m_chips.size());
     }
 
+    void Detector::setPlayback(std::chrono::steady_clock::time_point timePoint){
+        useEventTimeStorageHead = false;
+        const size_t sz = eventBatchTimestamps.getSize();
+
+        if (sz > 2 && timePoint > eventBatchTimestamps[0].second && timePoint < eventBatchTimestamps[sz - 1].second) {
+            timeSincePlaybackReset = timePoint;
+
+            size_t chosenIndex = 0;
+            for (size_t i = 0; i < sz; i++) {
+                if (eventBatchTimestamps[i].second > timeSincePlaybackReset) {
+                    chosenIndex = (i == 0) ? 0 : (i - 1);
+                    break;
+                }
+            }
+
+            if (chosenIndex >= sz) chosenIndex = sz - 1;
+            lastEventBatchTimestampIndex = chosenIndex;
+        } else {
+            useEventTimeStorageHead = true;
+            lastEventBatchTimestampIndex = (sz > 0) ? sz - 1 : 0;
+        }
+    }
+
     void Detector::update(const Camera& cam, const float& dTime){
         updateParticles(cam, dTime);
+        std::chrono::duration<double> chronoDelTime(dTime);
+        timeSincePlaybackReset += std::chrono::duration_cast<std::chrono::microseconds>(chronoDelTime);
 
-        if(!m_cli->isRunning())
+        if(!m_cli)
             return;
 
+        //First receive data and record timing
+        auto newData = m_cli->getEventBatch();
         auto start = std::chrono::steady_clock::now();
-        std::pair<std::unique_ptr<FEEvents>, std::unique_ptr<TrackData>> batchData = m_cli->getEventBatch();
-        std::unique_ptr<TrackData>& trackData = batchData.second;
 
-        if(!batchData.first) //No hits or tracks in this case
+        if(newData.first) //No hits or tracks in this case. //Store the batch data and timing in eventTimeStorage for playback purposes
+            eventBatchTimestamps.push(std::move(std::make_pair(std::move(newData), start)));
+
+        bool indexChanged = false;
+        size_t ebtSize = eventBatchTimestamps.getSize();
+        size_t playbackIndex = 0;
+        if(ebtSize == 0){
+            if(!newData.first) return;
+        }else{
+            playbackIndex = ebtSize - 1;
+        }
+
+        if(useEventTimeStorageHead){
+            if(newData.first){ //When we are at the head, render data only when new data comes in
+                indexChanged = true;
+                std::cout << "should have rendered" << std::endl;
+            }
+        }
+        else{
+            if(lastEventBatchTimestampIndex + 1 < ebtSize){
+                if(timeSincePlaybackReset >= eventBatchTimestamps[lastEventBatchTimestampIndex + 1].second){
+                    playbackIndex = ++lastEventBatchTimestampIndex;
+                    indexChanged = true;
+                    if(lastEventBatchTimestampIndex == ebtSize){ // we caught up to the current event
+                        useEventTimeStorageHead = true;
+                    }
+                }
+            }
+
+            if(timeSincePlaybackReset < eventBatchTimestamps[0].second){//Data might come in so fast it overwrites 
+                    //circular buffer and timeSincePlayback falls behind the timestamp of the tail element in eventBatchTimestamps
+                playbackIndex = 0;
+            }
+        }
+
+        //Don't render if the index has not changed
+        if(!indexChanged)
             return;
+
+        std::pair<std::unique_ptr<FEEvents>, std::unique_ptr<TrackData>>& batchData = eventBatchTimestamps[playbackIndex].first;
+        std::unique_ptr<TrackData>& trackData = batchData.second;
 
         //Update hits on chips
         for(int i = 0; i < m_cli->getTotalFEs(); i++) {
@@ -219,8 +297,8 @@ namespace viz{
 
                     trackPart.pos = straight->point;
                     trackPart.transform = transform(size, q, straight->point);
-                    trackPart.color = color;
-                    //trackPart.color = glm::vec4(0.745f, 0.373f, 0.859f, 1.0f);
+                    //trackPart.color = color;
+                    trackPart.color = glm::vec4(0.745f, 0.373f, 0.859f, 1.0f);
                     trackPart.is_immortal = trackIsImmortal;
                     trackPart.lifetime = hitDuration;
                     trackPart.ndcDepth = 0.0f;
@@ -229,8 +307,6 @@ namespace viz{
                 }
             }
         }
-        
-        batchData.first.reset(); batchData.second.reset();
 
         auto end = std::chrono::steady_clock::now();
         auto diff = end - start;

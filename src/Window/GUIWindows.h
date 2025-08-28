@@ -4,6 +4,7 @@
 #include "Window/Window.h"
 #include "OpenGL/Renderer.h"
 #include "OpenGL/Scene/Detector.h"
+#include "util/include/util.hpp"
 
 #include <cmath>
 
@@ -124,6 +125,22 @@ namespace viz{
         private:
             void onRender() override;
             void preFrame() override {}
+    };
+
+    class ScrubberWindow : public GUIWindow{
+        public:
+
+            ScrubberWindow() = default;
+            ScrubberWindow(const char* name, std::shared_ptr<Detector> detector) : GUIWindow(name), m_detector(detector) {}
+            void onEvent(const system::event& e) override {}
+
+            void init() {}
+        private:
+            void onRender() override;
+            void preFrame() override {}
+
+            std::shared_ptr<Detector> m_detector;
+            double playhead_time = 0;
     };
 }
 
