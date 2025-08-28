@@ -2,6 +2,8 @@
 
 std::shared_ptr<spdlog::logger> viz::m_appLogger = logging::make_log("Visualizer");
 
+std::chrono::steady_clock::time_point ApplicationStartTimePoint;
+
 namespace viz
 {
     Application::Application(int argc, char** argv){
@@ -27,21 +29,22 @@ namespace viz
     void Application::init(){
         ShaderManager::loadShaders();
 
+        m_detector = std::make_shared<Detector>();
+        m_detector->globalDetectorTransformation = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        m_detector->init(m_cli);
+
         m_GUIWindows.push_back(std::make_shared<Dockspace>("MainDock", ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking));
         m_GUIWindows.push_back(std::make_shared<SceneWindow>("Scene"));
         std::shared_ptr<Renderer> renderer = dynamic_cast<SceneWindow*>(m_GUIWindows[1].get())->getRenderer();
         m_GUIWindows.push_back(std::make_shared<ConsoleWindow>("Console"));
         m_GUIWindows.push_back(std::make_unique<ManagerWindow>("Manager", renderer));
+        m_GUIWindows.push_back(std::make_unique<ScrubberWindow>("Scrubber Window", m_detector));
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         for(int i = 0; i < m_GUIWindows.size(); i++)
             m_GUIWindows[i]->init();
         ImGui::EndFrame();
-
-        m_detector = std::make_shared<Detector>();
-        m_detector->globalDetectorTransformation = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        m_detector->init(m_cli);
         
         auto scene = std::make_shared<SceneWindow>("Scene");
         renderer->attachDetector(m_detector);
@@ -50,7 +53,7 @@ namespace viz
         m_appWin->setEventCallback(std::bind(&Application::onEvent, this, std::placeholders::_1));
 
         Camera* cam = renderer->getCamera();
-        float radius = 45.0f;
+        float radius = 250.0f;
 
         //PATH TYPE1
         // std::shared_ptr<Curve> semiCircle1 = std::make_shared<Arc>(
@@ -86,32 +89,40 @@ namespace viz
 
         //PATH TYPE2
         // std::vector<glm::vec3> linePoints = {
-        //     glm::vec3(0.0f, 0.0f, 0.0f),
-        //     glm::vec3(0.0f, 0.0f, 7.2f),
-        //     glm::vec3(0.0f, 0.0f, 14.478f)
+        //     glm::vec3(0.0f, -390.535f, 0.0f),
+        //     glm::vec3(0.0f, -348.548f, 0.0f),
+        //     glm::vec3(0.0f, -308.69f, 0.0f)
         // };
 
         // std::shared_ptr<Curve> lineUp = std::make_shared<Bezier>(linePoints, true);
         // lineUp->color = glm::vec4(0.0f, 0.5f, 0.5f, 1.0f);
 
-        // std::shared_ptr<Curve> helix = std::make_shared<Helix>(
-        //     glm::vec3(-radius, 0.0f, 0.0f),
-        //     glm::vec3(0.0f, radius, 7.2f),
-        //     glm::vec3(-radius, 0.0f, 14.478f)
-        // );
+        // std::vector<glm::vec3> helixPoints = {
+        //     glm::vec3( radius, -390.535f,   0.0f),   // start (x = +r, z = 0)
+        //     glm::vec3( 0.0f,   -370.0f,     radius), // quarter turn
+        //     glm::vec3(-radius, -350.0f,     0.0f),   // half turn
+        //     glm::vec3( 0.0f,   -330.0f,    -radius), // three-quarter turn
+        //     glm::vec3( radius, -310.0f,     0.0f),   // full turn
+        //     glm::vec3( 0.0f,   -300.0f,     radius), // quarter into 2nd turn
+        //     glm::vec3(-radius, -295.0f,     0.0f),   // halfway through 2nd turn
+        //     glm::vec3( 0.0f,   -300.0f,    -radius), // 3/4 turn in 2nd
+        //     glm::vec3( radius, -308.679f,   0.0f)    // end at top, wrap around
+        // };
+
+        // std::shared_ptr<Curve> helix = std::make_shared<BSpline>(helixPoints, 3);
         // helix->color = glm::vec4(0.0f, 0.5f, 0.5f, 1.0f);
 
         // lineUp->initForRender();
         // helix->initForRender();
 
-        // m_renderer->addCurve(lineUp);
-        // m_renderer->addCurve(helix);
+        // renderer->addCurve(lineUp);
+        // renderer->addCurve(helix);
 
         // CamPath helixPath;
         // helixPath.position = helix;
         // helixPath.lookAtCurve = lineUp;
-        // helixPath.timeDuration = 20.0f;
-        // helixPath.fixedUpVector = glm::vec3(0.0f, 0.0f, 1.0f);
+        // helixPath.timeDuration = 45.0f;
+        // helixPath.fixedUpVector = glm::vec3(0.0f, 1.0f, 0.0f);
 
         // std::function<float(float)> parametricBlend = [](float t){
         //     float sqr = t * t;
@@ -123,27 +134,27 @@ namespace viz
 
         //PATH TYPE3
         std::vector<glm::vec3> bsplinePoints = {
-            glm::vec3( 60.0f,   0.0f,   0.0f),
-            glm::vec3( 50.0f,   5.0f,  25.0f),
-            glm::vec3( 30.0f,  12.0f,  40.0f),
-            glm::vec3(  0.0f,  18.0f,  50.0f),
-            glm::vec3(-30.0f,  25.0f,  40.0f),
-            glm::vec3(-50.0f,  30.0f,  15.0f),
-            glm::vec3(-45.0f,  20.0f, -20.0f),
-            glm::vec3(-20.0f,  10.0f, -45.0f),
-            glm::vec3( 10.0f,   0.0f, -50.0f)
+            glm::vec3( radius, -390.535f,   0.0f),   // start (x = +r, z = 0)
+            glm::vec3( 0.0f,   -370.0f,     radius), // quarter turn
+            glm::vec3(-radius, -350.0f,     0.0f),   // half turn
+            glm::vec3( 0.0f,   -330.0f,    -radius), // three-quarter turn
+            glm::vec3( radius, -310.0f,     0.0f),   // full turn
+            glm::vec3( 0.0f,   -300.0f,     radius), // quarter into 2nd turn
+            glm::vec3(-radius, -295.0f,     0.0f),   // halfway through 2nd turn
+            glm::vec3( 0.0f,   -300.0f,    -radius), // 3/4 turn in 2nd
+            glm::vec3( radius, -308.679f,   0.0f)    // end at top, wrap around
         };
 
         std::shared_ptr<Curve> bspline = std::make_shared<BSpline>(bsplinePoints, 3);
         bspline->color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 
-        bspline->initForRender();
-        renderer->addCurve(bspline);
+        // bspline->initForRender();
+        // renderer->addCurve(bspline);
 
         CamPath camPath;
         camPath.position = bspline;
-        camPath.lookAtPoint = glm::vec3(0.0f, 7.2f, 0.0f);
-        camPath.timeDuration = 20.0f;
+        camPath.lookAtPoint = glm::vec3(0.0f, -349.607f, 0.0f);
+        camPath.timeDuration = 60.0f;
         camPath.useWorldUp = true;
 
         std::function<float(float)> parametricBlend = [](float t) {
@@ -157,13 +168,15 @@ namespace viz
 
     void Application::run(){
         if(coreInit){
-            float lastTime = 0.0f;
-            float currTime;
+            ApplicationStartTimePoint = std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point lastTime = std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point currTime;
 
             while(!m_appWin->windowShouldClose()){
-                currTime = glfwGetTime();
+                currTime = std::chrono::steady_clock::now();
                 ConsoleWindow* console = dynamic_cast<ConsoleWindow*>(m_GUIWindows[2].get());
-                float dTime = currTime - lastTime;
+                std::chrono::duration<double> delTime = currTime - lastTime;
+                double dTime = delTime.count();
                 console->fps = 1.0f/dTime;
                 lastTime = currTime;
 
@@ -229,6 +242,9 @@ namespace viz
             glfwTerminate();
         }
         else{
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
             m_appLogger->info("GLFW Initialized!");
             if(fullscreen){
                 width = glfwGetVideoMode(glfwGetPrimaryMonitor())->width;

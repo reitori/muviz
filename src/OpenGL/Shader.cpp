@@ -151,4 +151,44 @@ namespace viz{
             }
         }
     }
+
+    Shader::Shader(bool compileFromFile, const std::string& name, const std::string& computePath){
+        m_name = name;
+        std::string computeSource;
+        if(compileFromFile){
+            std::ifstream computeFile;
+            computeFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+            try{
+                computeFile.open(computePath);
+                std::stringstream computeStream;
+
+                computeStream << computeFile.rdbuf();
+                
+                computeFile.close();
+
+                computeSource = computeStream.str();
+            }
+            catch(std::ifstream::failure& e){
+                logger->error("{0} Could not read from file: {1}", m_name, e.what());
+            }
+        }
+        else{
+            computeSource = computePath;
+        }
+
+        const char* computeCode = computeSource.c_str();
+        unsigned int compute;
+
+        compute = glCreateShader(GL_COMPUTE_SHADER);
+        glShaderSource(compute, 1, &computeCode, NULL);
+        glCompileShader(compute);
+        checkCompileErrors(compute, "COMPUTE");
+
+        m_id = glCreateProgram();
+        glAttachShader(m_id, compute);
+        glLinkProgram(m_id);
+        checkCompileErrors(m_id, "PROGRAM");
+
+        glDeleteShader(compute);
+    }
 }

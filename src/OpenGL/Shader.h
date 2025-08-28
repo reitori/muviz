@@ -15,8 +15,11 @@ namespace viz{
         public:
             Shader() = delete;
             Shader(bool compileFromFile, const std::string& name, const std::string& vertexPath, const std::string& fragmentPath, const std::string& geometryPath = "");
+            Shader(bool compileFromeFile, const std::string& name, const std::string& computePath);
 
             inline void use() const {glUseProgram(m_id);}
+
+            inline std::string getName() { return m_name; }
 
             inline void setBool(const char* name, bool value) const{         
                 glUniform1i(glGetUniformLocation(m_id, name), (int)value); 
@@ -61,6 +64,11 @@ namespace viz{
 
             inline void setMat4(const char* name, const glm::mat4 &mat) const{
                 glUniformMatrix4fv(glGetUniformLocation(m_id, name), 1, GL_FALSE, &mat[0][0]);
+            }
+            
+            //For compute shaders only
+            inline void dispatchCompute(uint32_t x_group, uint32_t y_group, uint32_t z_group){
+                glDispatchCompute(x_group, y_group, z_group);
             }
 
             ~Shader() {glDeleteShader(m_id);}
