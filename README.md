@@ -6,6 +6,10 @@ A visualization tool for ATLAS ITK pixel detectors.
 
 ## Installation
 
+GLFW is a dependency of the software. **UNIX systems such as LINUX and FreeBSD require additional dependency installations.** 
+
+If you are running either system, scroll to the "Dependencies for Wayland and X11" section in the following [link](https://www.glfw.org/docs/latest/compile_guide.html#compile_deps_wayland) and install the necessary dependencies for your system.
+
 ```bash
 git clone https://github.com/reitori/visualizer.git
 # OPTIONAL: for LBL pc installs
@@ -53,3 +57,4 @@ Then, quit and restart your X11 server.
 - `core`: core functionality
 - `util`: utility functions
 - `datasets`: dataset loaders and adapters
+
