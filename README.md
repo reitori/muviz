@@ -1,4 +1,4 @@
-# Visualizer
+# MuViz
 
 A visualization tool for ATLAS ITK pixel detectors.
 
@@ -59,5 +59,6 @@ Then, quit and restart your X11 server.
 - `core`: core functionality
 - `util`: utility functions
 - `datasets`: dataset loaders and adapters
+
 
 
