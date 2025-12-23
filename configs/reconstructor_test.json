@@ -1,0 +1,24 @@
+{
+    "viz_config": {
+        "frame_time": 1000
+    },
+    "global_source_config": {
+        "path": "/home/kabel/Programming/testing/visualizer/rawdatatests",
+        "auto": true,
+        "type": "YarrBinaryFile",
+        "fps": 100,
+        "block_timeout": 10,
+        "trigger_multiplier": 16
+    },
+    "sources": [
+        {
+            "name": "0x20c52",
+            "position": [0, 0, 0],
+            "angle": [0, 0, 0],
+            "size": [20, 20, 0.1],
+            "rowcol": [400, 384],
+            "enable": 1,
+            "port": "49150"
+        }
+    ]
+}

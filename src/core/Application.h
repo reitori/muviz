@@ -13,6 +13,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include "OpenGL/ShaderManager.h"
+
 #include "Window/glWindow.h"
 #include "Window/GUIWindows.h"
 
@@ -25,13 +27,16 @@
 TODO:
  + Camera rotatable ->
  - Shading / marker around edges of chips to delinate between them
- - Testing realtime operation
- - Make hit size configurable (w/l), and make them visible on both sides of the chip
+ + Testing realtime operation
+ + Make hit size configurable (w/l), and make them visible on both sides of the chip
  - X/Y/Z axis indicator
  + If you can make chips semi-transparent?
- - Room shape thing?
+ - Skybox
  - Clickable chips?
  - CAD models?
+ - Optimized Particle System
+ - ECS
+ - Decouple Detector (Should not act as a logic, rendering, and particle manager class all at the same time) -- Change this when ECS is incorproated
 */
 
 
@@ -45,7 +50,7 @@ namespace viz{
             inline bool isInit() {return coreInit;}
 
             void run();
-            void onEvent(event& e);
+            void onEvent(system::event& e);
 
             ~Application();
 
@@ -59,11 +64,10 @@ namespace viz{
             bool coreInit; //At some point maybe change this to bit flags indicating which API's are initialized ex: 011 logger init true, glfw init true, glad init true
             static void GLFWErrorCallback(int err, const char* message){ m_appLogger->error("GLFW Code {0}: {1}", err, message); } // Should be for the glfw window to handle
 
-            std::unique_ptr<glWindow> m_appWin;
             std::shared_ptr<VisualizerCli> m_cli;
             std::shared_ptr<Detector> m_detector;
-            std::shared_ptr<Renderer> m_renderer;
-            std::vector<std::unique_ptr<GUIWindow>> m_GUIWindows;      
+            std::unique_ptr<glWindow> m_appWin;
+            std::vector<std::shared_ptr<GUIWindow>> m_GUIWindows;      
     };
 }
 

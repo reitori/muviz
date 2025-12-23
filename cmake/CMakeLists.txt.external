@@ -60,4 +60,47 @@ function(ADD_EXTERNAL_DEPS )
     )
     FetchContent_MakeAvailable(cppzmq)
     include_directories(${CMAKE_CURRENT_BINARY_DIR}/../_deps/cppzmq-src)
+
+    #Corryvreckan
+    FetchContent_Declare(
+        corryvreckan
+        GIT_REPOSITORY https://gitlab.cern.ch/kabel/corryvreckan.git
+        GIT_TAG        master
+    )
+
+    #Many used paths in the CMakeLists of Corryvreckan are relative to CMAKE_SOURCE_DIR.
+    #This is a problem as CMAKE_SOURCE_DIR is a global read-only variable that references the full path to the top level of the source tree.
+    #Therefore, any paths that are relative to the CMAKE_SOURCE_DIR are relative to the source directory of the visualizer rather than the fetched Corryvreckan source directory.
+    #Instead, have to replace references to CMAKE_SOURCE_DIR that could cause problems with CMAKE_PROJECT_DIR before making the content available.
+    FetchContent_GetProperties(corryvreckan)
+    if(NOT corryvreckan_POPULATED)
+        FetchContent_Populate(corryvreckan)
+
+        file(READ ${corryvreckan_SOURCE_DIR}/src/objects/CMakeLists.txt CORRYVRECKAN_OBJECTS_CMAKE)
+        string(REPLACE "CMAKE_SOURCE_DIR" "PROJECT_SOURCE_DIR" CORRYVRECKAN_OBJECTS_CMAKE "${CORRYVRECKAN_OBJECTS_CMAKE}")
+        file(WRITE ${corryvreckan_SOURCE_DIR}/src/objects/CMakeLists.txt "${CORRYVRECKAN_OBJECTS_CMAKE}")
+        
+        add_subdirectory(${corryvreckan_SOURCE_DIR} ${corryvreckan_BINARY_DIR})
+    endif()
+
+    #Corryvreckan CMakeLists does not create a library for its dependencies.
+    #Instead, references them via a variable CORRYVRECKAN_DEPS_LIBRARIES.
+    #Since variables are local to the fetched project, cannot use in top-level project.
+    #Therefore, need to create the library:
+    find_package(ROOT 6.20 REQUIRED COMPONENTS Minuit Minuit2 Gui GenVector Geom Core Hist RIO)
+    find_package(Eigen3 REQUIRED)
+
+    add_library(corry_lib INTERFACE)
+
+    target_include_directories(corry_lib INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/../_deps/corryvreckan-src/src)
+    target_include_directories(corry_lib INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/../_deps/corryvreckan-src/3rdparty)
+
+    target_link_libraries(corry_lib INTERFACE
+        Eigen3::Eigen
+        ROOT::Core ROOT::GenVector ROOT::Geom ROOT::RIO ROOT::Hist ROOT::Minuit ROOT::Minuit2
+        GBL
+        CorryvreckanUtilities
+        CorryvreckanObjects
+        CorryvreckanCore
+    )
 endfunction()

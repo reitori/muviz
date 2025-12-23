@@ -7,6 +7,8 @@
 #include <vector>
 #include <functional>
 
+using namespace viz;
+
 namespace StdDict {
     bool registerDataLoader(std::string name,
                               std::function<std::unique_ptr<DataLoader>()> f);

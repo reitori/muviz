@@ -26,7 +26,7 @@ namespace viz{
             glWindow(const char* name, std::uint16_t width, std::uint16_t height);
             
             void render() override;
-            void setEventCallback(const std::function<void(event& e)>& callback) { eventCallback = callback; }
+            void setEventCallback(const std::function<void(system::event& e)>& callback) { eventCallback = callback; }
 
             inline bool windowShouldClose() const { return glfwWindowShouldClose(m_window); }
             inline const GLFWwindow* getGLFWWindow() const { return m_window; }
@@ -41,7 +41,7 @@ namespace viz{
             std::uint16_t m_width;
             std::uint16_t m_height; 
 
-            std::function<void(event& e)> eventCallback;
+            std::function<void(system::event& e)> eventCallback;
 
             void windowSizeCallback(int width, int height);
             static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);

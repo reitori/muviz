@@ -4,16 +4,27 @@
 #include "core/header.h"
 
 #include "OpenGL/Framebuffer.h"
+#include "OpenGL/ShaderManager.h"
 #include "OpenGL/Shader.h"
 #include "OpenGL/Camera.h"
 #include "OpenGL/Scene/Detector.h"
+#include "OpenGL/Scene/Skybox.h"
 
 #include "Events/Event.h"
 
 #include <glm/glm.hpp>
 #include <chrono>
+#include <vector>
 
 namespace viz{
+
+    //TODO: Refactor of Renderer engine to support an ECS-design pattern
+    //      Why: Makes it easier to create new/future objects with certain properties
+    //           decouples properties from these objects so that they are applied to objects
+    //           rather than tightly bound to their internals
+    //      Example: Entity Player takes on Components Light, Material, Camera, etc. Systems evalute these properties
+    //      Look at TODO for Camera.h as another example
+
     class Renderer{
         public:
             Renderer(int width, int height);
@@ -24,16 +35,18 @@ namespace viz{
             void setColor(glm::vec4 color) {m_color = color;}
             void setCurrentCamera(std::string id);
 
+            void addCurve(const std::shared_ptr<Curve>& curve);
+
             void attachDetector(std::shared_ptr<Detector> detetctor) { m_detector = detetctor; }
 
             void attachCamera(std::string name, const Camera& camera);
-            Camera* getCamera() {return &m_Cameras[m_currCam];}
+            Camera* getCamera() {return &m_cameras[m_currCam];}
             Camera* getCamera(std::string name);
             void destroyCamera(std::string name);
 
-            inline std::uint16_t getWidth() const { return m_framebuffer->getWidth();}
-            inline std::uint16_t getHeight() const { return m_framebuffer->getHeight();}
-            inline GLuint getTexID() const { return m_framebuffer->getTexID(); }
+            inline std::uint16_t getWidth() const { return m_screenFramebuffer->getWidth();}
+            inline std::uint16_t getHeight() const { return m_screenFramebuffer->getHeight();}
+            inline GLuint getTexID() const { return m_screenFramebuffer->getTexID(); }
 
             const std::shared_ptr<Detector> getDetector() const { return m_detector; }
             
@@ -41,16 +54,18 @@ namespace viz{
             void sortTransparentObjects();
 
             double getDelTime() const { return delTime; }
+            
+            bool enableSkybox;
         private:
             friend class Application;
             std::shared_ptr<Detector> m_detector;
             std::unique_ptr<Framebuffer> m_framebuffer;
-
-            std::uint8_t m_activeShaderNum;
-            std::vector<Shader> m_Shaders;
+            std::unique_ptr<Framebuffer> m_screenFramebuffer;
+            std::unique_ptr<Skybox> m_skybox;
+            std::vector<std::shared_ptr<Curve>> m_curves;
 
             std::string m_currCam;
-            std::map<std::string, Camera> m_Cameras;
+            std::map<std::string, Camera> m_cameras;
 
             glm::vec4 m_color;
 

@@ -7,8 +7,9 @@
         "auto": true,
         "type": "YarrBinaryFile",
         "fps": 100,
-        "block_timeout": 1,
-        "max_events_per_block": 10000
+        "block_timeout": 100000,
+        "max_events_per_block": 30,
+        "trigger_multiplier": 16
     },
     "sources": [
         {

@@ -4,6 +4,7 @@
 #include "Window/Window.h"
 #include "OpenGL/Renderer.h"
 #include "OpenGL/Scene/Detector.h"
+#include "util/include/util.hpp"
 
 #include <cmath>
 
@@ -17,6 +18,7 @@
 namespace viz{
     class GUIWindow : public Window{
         public:
+            friend class GUIManager;
             GUIWindow() = delete;
             GUIWindow(const char* name, ImGuiWindowFlags windowFlags = 0) : Window(name), m_windowFlags(windowFlags) {}
 
@@ -28,7 +30,7 @@ namespace viz{
                 ImGui::End();
             }
 
-            virtual void onEvent(const event& e) = 0;
+            virtual void onEvent(const system::event& e) = 0;
             inline void setOpen(bool isOpen) {m_isOpen = isOpen;}
 
             virtual ~GUIWindow() = default;
@@ -46,7 +48,7 @@ namespace viz{
             Dockspace(const char* name, ImGuiWindowFlags windowFlags = 0) : GUIWindow(name, windowFlags) {}
 
             void init() override;
-            void onEvent(const event& e) override {}
+            void onEvent(const system::event& e) override {}
 
             virtual ~Dockspace() = default;
         private:
@@ -57,12 +59,12 @@ namespace viz{
     class SceneWindow : public GUIWindow {
         public:
             SceneWindow() = delete;
-            SceneWindow(const char* name, std::shared_ptr<Renderer> renderer, ImGuiWindowFlags windowFlags = 0) : GUIWindow(name, windowFlags),  m_renderer(renderer) {};
+            SceneWindow(const char* name, ImGuiWindowFlags windowFlags = 0);
 
             void init() override {}
-            void onEvent(const event& e) override;
-
-            void attachRenderer(std::shared_ptr<Renderer> renderer) {m_renderer = renderer;}
+            void onEvent(const system::event& e) override;
+            std::shared_ptr<Renderer> getRenderer() { return m_renderer; }
+           
             virtual ~SceneWindow() = default;
         private:
             std::shared_ptr<Renderer> m_renderer;
@@ -82,18 +84,23 @@ namespace viz{
             float x = 0, y = 0, z = 0;
             float color[4] = {0, 0, 0, 1};
             float worldRot = 0.0f;
+            float hitDuration = 0.1f;
+            bool hitDurIsIndefinite = false;
             bool startCLI = false;
+            bool CycleCamPath = false;
+            bool goThroughPath = false;
 
             ManagerWindow() = default;
             ManagerWindow(const char* name, std::shared_ptr<Renderer> renderer);
 
             void init() override {};
-            void onEvent(const event& e) override {}
+            void onEvent(const system::event& e) override {}
 
             void attachDetector(std::shared_ptr<Renderer> renderer);
 
             virtual ~ManagerWindow() = default;
         private:
+            int hitDurMin{0}, hitDurSec{1};
             std::shared_ptr<Renderer> m_renderer;
 
             ImFont* largerFont;
@@ -109,7 +116,7 @@ namespace viz{
 
             ConsoleWindow() = default;
             ConsoleWindow(const char* name) : GUIWindow(name) {}
-            void onEvent(const event& e) override {}
+            void onEvent(const system::event& e) override {}
 
             void init() {}
             void AddLog(const char* fmt, ...) IM_FMTARGS(2);
@@ -118,6 +125,22 @@ namespace viz{
         private:
             void onRender() override;
             void preFrame() override {}
+    };
+
+    class ScrubberWindow : public GUIWindow{
+        public:
+
+            ScrubberWindow() = default;
+            ScrubberWindow(const char* name, std::shared_ptr<Detector> detector) : GUIWindow(name), m_detector(detector) {}
+            void onEvent(const system::event& e) override {}
+
+            void init() {}
+        private:
+            void onRender() override;
+            void preFrame() override {}
+
+            std::shared_ptr<Detector> m_detector;
+            double playhead_time = 0;
     };
 }
 

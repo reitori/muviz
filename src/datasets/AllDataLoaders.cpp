@@ -2,6 +2,7 @@
 #include "ClassRegistry.h"
 #include "logging.h"
 
+
 namespace {
     auto dlog = logging::make_log("DataLoaderRegistry");
 }

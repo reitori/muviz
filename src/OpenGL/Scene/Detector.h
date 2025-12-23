@@ -1,9 +1,11 @@
-#ifndef ENTITY_H
-#define ENTITY_H
-
+#ifndef DETECTOR_H
+#define DETECTOR_H
 
 #include "core/header.h"
 #include "OpenGL/Scene/Mesh.h"
+#include "OpenGL/Scene/Chip.h"
+
+#include "OpenGL/Object/Cube.h"
 
 #include "Events/ParticleEvent.h"
 #include "OpenGL/Camera.h"
@@ -13,33 +15,24 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <chrono>
+
 #include "cli.h"
 
 #include "CircularBuffer.h"
 
 namespace viz{
-    extern std::vector<SimpleVertex> CubeVertices;
-    extern std::vector<SimpleVertex> HitVertices;
-    extern std::vector<GLuint> CubeIndices;
-
-    struct Chip{
-        std::string name;
-        std::uint16_t fe_id, maxCols, maxRows;
-        std::uint64_t hits;
-
-        glm::vec3 pos, eulerRot;
-        glm::vec3 scale;
-    };
-
     struct Particle{
         glm::vec3 pos;
         glm::mat4 transform;
         glm::vec4 color;
-
+        
         bool is_immortal;
+        bool isHit;
         float lifetime, ndcDepth;
     };
 
+    //TODO: Change track length so not hardcoded and instead dynamic based on detector length
     class Detector{
         public:
             bool startCLI = false;
@@ -48,52 +41,60 @@ namespace viz{
 
             void init(const std::shared_ptr<VisualizerCli>& cli);
 
-            void update(const Camera& cam, float dTime);
-            void setEventCallback(const std::function<void(event& e)>& callback) { eventCallback = callback; }
+            void setPlayback(std::chrono::steady_clock::time_point timePoint);
+            void setRealtime() { useEventTimeStorageHead = true; }
+            bool isRealtime() { return useEventTimeStorageHead; }
+
+            void update(const Camera& cam, const float& dTime);
+            void updateHitDurations(float dur);
+            void setEventCallback(const std::function<void(system::event& e)>& callback) { eventCallback = callback; }
 
             void render(const Shader& shader);
             void sortTransparent(const Camera& cam);
-            std::vector<Chip> getChips() const { return m_chips;}
+            std::vector<Chip>& getChips() { return m_chips;}
 
-            uint32_t totHits();
+            uint32_t totHits(); 
 
-            float particleLifetime = 10;
+            glm::mat4 globalDetectorTransformation = glm::mat4(1.0f);
+            float hitDuration = 0.5f;
+            bool trackIsImmortal = false;
+ 
+            //Stores the eventbatch as well as the timestamp of when it was received by the Detector from CorryWrapper
+            CircularBuffer<std::pair<EventBatch, std::chrono::steady_clock::time_point>> eventBatchTimestamps;
+            std::chrono::steady_clock::time_point timeSincePlaybackReset; //Inremented time since last playback
         private:
-            int FindUnusedParticle();
-            int LastUsedParticle = 0;
+            void updateParticles(const Camera& cam, const float& dTime);
+            void configure();
+            int findUnusedParticle();
+            std::uint32_t LastUsedParticle = 0;
+            std::uint32_t totalParticles = 100000;
 
-            glm::mat4 transform(glm::vec3 scale, glm::vec3 eulerRot, glm::vec3 pos, bool isInRadians = false);
+            glm::mat4 transform(const glm::vec3& scale, const glm::quat& args_quat, const glm::vec3& pos);
+            glm::mat4 transform(glm::vec3 scale, glm::vec3 eulerRot, glm::vec3 pos, OrientationMode orientation, bool isInRadians = false);
             std::shared_ptr<VisualizerCli> m_cli;
 
-            GLuint m_instBufID; 
-            std::uint32_t m_size = 0; //per frame basis
-            std::uint16_t m_nfe;
-
-            std::uint32_t nHits = 0;
-
-            //CLI state is RECONSTRUCTED
-            //CircularBuffer<ReconstructedBunch> circularEventBuffer; //Moving window of reconstructed events are displayed at a time
-            std::vector<ReconstructedBunch> eventBuffer; //Indefinite number of reconstructed events displayed
+            std::uint32_t nHitsThisFrame = 0; //number of collected hits in a given frame
             
             glm::mat4 m_transform;
             std::vector<Chip> m_chips;
-            std::vector<Particle> ParticlesContainer;
+            std::vector<Particle> ParticlesContainer; //Geometry -- All the chips and hits are rendered as particles until I fix the rendering architecture
 
-            SimpleMesh CubeMesh;
+            SimpleMesh SimpleCubeMesh = SimpleMesh(SimpleCubeVertices, SimpleCubeIndices, true);
             std::size_t startOfHitBuffer = 0;
 
             glm::vec3 hitScale = glm::vec3(0.05f, 0.05f, 0.05f);
             glm::vec3 defaultHitColor = glm::vec4(1.0f, 0.2509f, 0.0235f, 1.0f);
 
-            std::function<void(event& e)> eventCallback;
+            std::function<void(system::event& e)> eventCallback;
 
+            int type = 0;
+            float totalupdatetime = 0.0f;
+            float detectorLength;
+            int totalupdateframes = 0;
 
-            //Delete this when you are done
-            int trackCount = 0;
-            std::vector<glm::vec3> frontHits;
-            std::vector<glm::vec3> backHits;
-            std::vector<glm::mat4> trackTransforms;
-            std::vector<glm::vec4> trackColors;
+            //For indexing into eventTimeStorage
+            bool useEventTimeStorageHead = true;
+            size_t lastEventBatchTimestampIndex = 0;
     };
 }
 

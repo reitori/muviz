@@ -8,6 +8,8 @@ namespace viz{
 
     glWindow::glWindow(const char* name, std::uint16_t width, std::uint16_t height) : Window(name), m_width(width), m_height(height){
         //TODO: Check initialization status the Application flags
+		glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
+
         m_window = glfwCreateWindow(width, height, name, NULL, NULL);
         if(m_window == NULL){
             m_appLogger->error("Failed to create GLFW window");
@@ -28,7 +30,7 @@ namespace viz{
     }
 
     void glWindow::render(){
-
+		
         glfwPollEvents();
         glfwSwapBuffers(m_window);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -45,17 +47,17 @@ namespace viz{
 		switch (action) {
 			case GLFW_PRESS:
 			{
-				viz::keyEventPressed keyEvent((viz::key::keyCodes)key);
+				system::keyEventPressed keyEvent((system::key::keyCodes)key);
 				windowManager->eventCallback(keyEvent);
 				break;
 			}
 			case GLFW_RELEASE: {
-				viz::keyEventReleased keyEvent((viz::key::keyCodes)key);
+				system::keyEventReleased keyEvent((system::key::keyCodes)key);
 				windowManager->eventCallback(keyEvent);
 				break;
 			}
 			case GLFW_REPEAT: {
-				viz::keyEventPressed keyEvent((viz::key::keyCodes)key);
+				system::keyEventPressed keyEvent((system::key::keyCodes)key);
 				windowManager->eventCallback(keyEvent);
 				break;
 			}
@@ -66,12 +68,12 @@ namespace viz{
 		glWindow* windowManager = static_cast<glWindow*>(glfwGetWindowUserPointer(window));
 		switch (action) {
 			case GLFW_PRESS: {
-				viz::mouseEventPressed mouseEvent((viz::mouse::mouseCodes)button);
+				system::mouseEventPressed mouseEvent((system::mouse::mouseCodes)button);
 				windowManager->eventCallback(mouseEvent);
 				break;
 			}
 			case GLFW_RELEASE: {
-				viz::mouseEventReleased mouseEvent((viz::mouse::mouseCodes)button);
+				system::mouseEventReleased mouseEvent((system::mouse::mouseCodes)button);
 				windowManager->eventCallback(mouseEvent);
 				break;
 			}
@@ -80,13 +82,13 @@ namespace viz{
 
 	void glWindow::scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 		glWindow* windowManager = static_cast<glWindow*>(glfwGetWindowUserPointer(window));
-		viz::mouseEventScrolled m_event((const float)xoffset, (const float)yoffset);
+		system::mouseEventScrolled m_event((const float)xoffset, (const float)yoffset);
 		windowManager->eventCallback(m_event);
 	}
 
 	void glWindow::mouse_pos_callback(GLFWwindow* window, double xpos, double ypos) {
 		glWindow* windowManager = static_cast<glWindow*>(glfwGetWindowUserPointer(window));
-		viz::mouseEventMoved m_event((const float)xpos, (const float)ypos);
+		system::mouseEventMoved m_event((const float)xpos, (const float)ypos);
 		windowManager->eventCallback(m_event);
 	}
 
@@ -94,7 +96,7 @@ namespace viz{
 	void glWindow::window_resize_callback(GLFWwindow* window, int i_width, int i_height) {
 		glWindow* windowManager = static_cast<glWindow*>(glfwGetWindowUserPointer(window));
 		
-		viz::windowEventResize wr_event(i_width, i_height);
+		system::windowEventResize wr_event(i_width, i_height);
 		windowManager->eventCallback(wr_event);
 	}
 
@@ -102,7 +104,7 @@ namespace viz{
 		glWindow* windowManager = static_cast<glWindow*>(glfwGetWindowUserPointer(window));
 		glfwDestroyWindow(window);
 		glfwTerminate();
-		viz::windowEventClose wc_event;
+		system::windowEventClose wc_event;
 		windowManager->eventCallback(wc_event);
 	}
 
