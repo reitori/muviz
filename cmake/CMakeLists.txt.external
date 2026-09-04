@@ -129,7 +129,7 @@ function(ADD_EXTERNAL_DEPS )
                     -B "${ROOT_BINARY_DIR}"
                     "-DCMAKE_INSTALL_PREFIX=${ROOT_INSTALL_DIR}"
                     "-DCMAKE_BUILD_TYPE=Release"
-                    -Dgminimal=ON
+                    -Dminimal=ON
                     -Dminuit2=ON
                     -Dpyroot=OFF
                     -Dpyroot_experimental=OFF
