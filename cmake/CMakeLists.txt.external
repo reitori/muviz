@@ -79,7 +79,92 @@ function(ADD_EXTERNAL_DEPS )
         file(READ ${corryvreckan_SOURCE_DIR}/src/objects/CMakeLists.txt CORRYVRECKAN_OBJECTS_CMAKE)
         string(REPLACE "CMAKE_SOURCE_DIR" "PROJECT_SOURCE_DIR" CORRYVRECKAN_OBJECTS_CMAKE "${CORRYVRECKAN_OBJECTS_CMAKE}")
         file(WRITE ${corryvreckan_SOURCE_DIR}/src/objects/CMakeLists.txt "${CORRYVRECKAN_OBJECTS_CMAKE}")
-        
+
+        set(ROOT_COMPONENTS
+            Minuit
+            Minuit2
+            Gui
+            GenVector
+            Geom
+            Core
+            Hist
+            RIO
+        )
+
+        find_package(
+            ROOT 6.20
+            QUIET
+            COMPONENTS ${ROOT_COMPONENTS}
+        )
+
+        if(NOT ROOT_FOUND)
+            message(STATUS "ROOT >= 6.20 not found -- building ROOT 6.20.08")
+
+            find_package(Git REQUIRED)
+
+            set(ROOT_SOURCE_DIR  "${CMAKE_BINARY_DIR}/_deps/root-src")
+            set(ROOT_BINARY_DIR  "${CMAKE_BINARY_DIR}/_deps/root-build")
+            set(ROOT_INSTALL_DIR "${CMAKE_BINARY_DIR}/_deps/root-install")
+
+            if(NOT EXISTS "${ROOT_SOURCE_DIR}/CMakeLists.txt")
+                execute_process(
+                    COMMAND
+                        "${GIT_EXECUTABLE}" clone
+                        --depth 1
+                        --branch v6-20-08
+                        https://github.com/root-project/root.git
+                        "${ROOT_SOURCE_DIR}"
+                    RESULT_VARIABLE ROOT_CLONE_RESULT
+                )
+
+                if(NOT ROOT_CLONE_RESULT EQUAL 0)
+                    message(FATAL_ERROR "Failed to download ROOT 6.20.08")
+                endif()
+            endif()
+
+            execute_process(
+                COMMAND
+                    "${CMAKE_COMMAND}"
+                    -S "${ROOT_SOURCE_DIR}"
+                    -B "${ROOT_BINARY_DIR}"
+                    "-DCMAKE_INSTALL_PREFIX=${ROOT_INSTALL_DIR}"
+                    "-DCMAKE_BUILD_TYPE=Release"
+                    -Dgminimal=ON
+                    -Dminuit2=ON
+                    -Dpyroot=OFF
+                    -Dpyroot_experimental=OFF
+                RESULT_VARIABLE ROOT_CONFIGURE_RESULT
+            )
+
+            if(NOT ROOT_CONFIGURE_RESULT EQUAL 0)
+                message(FATAL_ERROR "Failed to configure ROOT 6.20.08")
+            endif()
+
+            execute_process(
+                COMMAND
+                    "${CMAKE_COMMAND}"
+                    --build "${ROOT_BINARY_DIR}"
+                    --target install
+                    --parallel
+                RESULT_VARIABLE ROOT_BUILD_RESULT
+            )
+
+            if(NOT ROOT_BUILD_RESULT EQUAL 0)
+                message(FATAL_ERROR "Failed to build ROOT 6.20.08")
+            endif()
+
+            list(PREPEND CMAKE_PREFIX_PATH "${ROOT_INSTALL_DIR}")
+            unset(ROOT_DIR CACHE)
+
+            find_package(
+                ROOT 6.20
+                REQUIRED
+                COMPONENTS ${ROOT_COMPONENTS}
+            )
+        else()
+            message(STATUS "Using existing ROOT ${ROOT_VERSION}")
+        endif()
+
         add_subdirectory(${corryvreckan_SOURCE_DIR} ${corryvreckan_BINARY_DIR})
     endif()
 
@@ -87,91 +172,6 @@ function(ADD_EXTERNAL_DEPS )
     #Instead, references them via a variable CORRYVRECKAN_DEPS_LIBRARIES.
     #Since variables are local to the fetched project, cannot use in top-level project.
     #Therefore, need to create the library:
-
-        set(ROOT_COMPONENTS
-        Minuit
-        Minuit2
-        Gui
-        GenVector
-        Geom
-        Core
-        Hist
-        RIO
-    )
-
-    find_package(
-        ROOT 6.20
-        QUIET
-        COMPONENTS ${ROOT_COMPONENTS}
-    )
-
-    if(NOT ROOT_FOUND)
-        message(STATUS "ROOT >= 6.20 not found -- building ROOT 6.20.08")
-
-        find_package(Git REQUIRED)
-
-        set(ROOT_SOURCE_DIR  "${CMAKE_BINARY_DIR}/_deps/root-src")
-        set(ROOT_BINARY_DIR  "${CMAKE_BINARY_DIR}/_deps/root-build")
-        set(ROOT_INSTALL_DIR "${CMAKE_BINARY_DIR}/_deps/root-install")
-
-        if(NOT EXISTS "${ROOT_SOURCE_DIR}/CMakeLists.txt")
-            execute_process(
-                COMMAND
-                    "${GIT_EXECUTABLE}" clone
-                    --depth 1
-                    --branch v6-20-08
-                    https://github.com/root-project/root.git
-                    "${ROOT_SOURCE_DIR}"
-                RESULT_VARIABLE ROOT_CLONE_RESULT
-            )
-
-            if(NOT ROOT_CLONE_RESULT EQUAL 0)
-                message(FATAL_ERROR "Failed to download ROOT 6.20.08")
-            endif()
-        endif()
-
-        execute_process(
-            COMMAND
-                "${CMAKE_COMMAND}"
-                -S "${ROOT_SOURCE_DIR}"
-                -B "${ROOT_BINARY_DIR}"
-                "-DCMAKE_INSTALL_PREFIX=${ROOT_INSTALL_DIR}"
-                "-DCMAKE_BUILD_TYPE=Release"
-                -Dgminimal=ON
-                -Dminuit2=ON
-                -Dpyroot=OFF
-                -Dpyroot_experimental=OFF
-            RESULT_VARIABLE ROOT_CONFIGURE_RESULT
-        )
-
-        if(NOT ROOT_CONFIGURE_RESULT EQUAL 0)
-            message(FATAL_ERROR "Failed to configure ROOT 6.20.08")
-        endif()
-
-        execute_process(
-            COMMAND
-                "${CMAKE_COMMAND}"
-                --build "${ROOT_BINARY_DIR}"
-                --target install
-                --parallel
-            RESULT_VARIABLE ROOT_BUILD_RESULT
-        )
-
-        if(NOT ROOT_BUILD_RESULT EQUAL 0)
-            message(FATAL_ERROR "Failed to build ROOT 6.20.08")
-        endif()
-
-        list(PREPEND CMAKE_PREFIX_PATH "${ROOT_INSTALL_DIR}")
-        unset(ROOT_DIR CACHE)
-
-        find_package(
-            ROOT 6.20
-            REQUIRED
-            COMPONENTS ${ROOT_COMPONENTS}
-        )
-    else()
-        message(STATUS "Using existing ROOT ${ROOT_VERSION}")
-    endif()
 
     find_package(Eigen3 REQUIRED)
 
@@ -188,5 +188,5 @@ function(ADD_EXTERNAL_DEPS )
         CorryvreckanObjects
         CorryvreckanCore
     )
-    
+
 endfunction()
