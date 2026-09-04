@@ -133,11 +133,18 @@ function(ADD_EXTERNAL_DEPS )
                     -Dminuit2=ON
                     -Dpyroot=OFF
                     -Dpyroot_experimental=OFF
+                    "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
                 RESULT_VARIABLE ROOT_CONFIGURE_RESULT
+                OUTPUT_VARIABLE ROOT_CONFIGURE_OUTPUT
+                ERROR_VARIABLE ROOT_CONFIGURE_ERROR
             )
 
             if(NOT ROOT_CONFIGURE_RESULT EQUAL 0)
-                message(FATAL_ERROR "Failed to configure ROOT 6.20.08")
+                message(FATAL_ERROR
+                    "Failed to configure ROOT 6.20.08\n"
+                    "${ROOT_CONFIGURE_OUTPUT}\n"
+                    "${ROOT_CONFIGURE_ERROR}"
+                )
             endif()
 
             execute_process(
