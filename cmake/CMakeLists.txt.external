@@ -1,4 +1,3 @@
-include(ExternalProject)
 include(FetchContent)
 
 # include(ExternalProject)
@@ -68,6 +67,23 @@ function(ADD_EXTERNAL_DEPS )
         GIT_TAG        master
     )
 
+    set(ROOT_COMPONENTS
+        Minuit
+        Minuit2
+        Gui
+        GenVector
+        Geom
+        Core
+        Hist
+        RIO
+    )
+
+    find_package(
+        ROOT
+        REQUIRED
+        COMPONENTS ${ROOT_COMPONENTS}
+    )
+
     #Many used paths in the CMakeLists of Corryvreckan are relative to CMAKE_SOURCE_DIR.
     #This is a problem as CMAKE_SOURCE_DIR is a global read-only variable that references the full path to the top level of the source tree.
     #Therefore, any paths that are relative to the CMAKE_SOURCE_DIR are relative to the source directory of the visualizer rather than the fetched Corryvreckan source directory.
@@ -79,98 +95,6 @@ function(ADD_EXTERNAL_DEPS )
         file(READ ${corryvreckan_SOURCE_DIR}/src/objects/CMakeLists.txt CORRYVRECKAN_OBJECTS_CMAKE)
         string(REPLACE "CMAKE_SOURCE_DIR" "PROJECT_SOURCE_DIR" CORRYVRECKAN_OBJECTS_CMAKE "${CORRYVRECKAN_OBJECTS_CMAKE}")
         file(WRITE ${corryvreckan_SOURCE_DIR}/src/objects/CMakeLists.txt "${CORRYVRECKAN_OBJECTS_CMAKE}")
-
-        set(ROOT_COMPONENTS
-            Minuit
-            Minuit2
-            Gui
-            GenVector
-            Geom
-            Core
-            Hist
-            RIO
-        )
-
-        find_package(
-            ROOT 6.20
-            QUIET
-            COMPONENTS ${ROOT_COMPONENTS}
-        )
-
-        if(NOT ROOT_FOUND)
-            message(STATUS "ROOT >= 6.20 not found -- building ROOT 6.20.08")
-
-            find_package(Git REQUIRED)
-
-            set(ROOT_SOURCE_DIR  "${CMAKE_BINARY_DIR}/_deps/root-src")
-            set(ROOT_BINARY_DIR  "${CMAKE_BINARY_DIR}/_deps/root-build")
-            set(ROOT_INSTALL_DIR "${CMAKE_BINARY_DIR}/_deps/root-install")
-
-            if(NOT EXISTS "${ROOT_SOURCE_DIR}/CMakeLists.txt")
-                execute_process(
-                    COMMAND
-                        "${GIT_EXECUTABLE}" clone
-                        --depth 1
-                        --branch v6-20-08
-                        https://github.com/root-project/root.git
-                        "${ROOT_SOURCE_DIR}"
-                    RESULT_VARIABLE ROOT_CLONE_RESULT
-                )
-
-                if(NOT ROOT_CLONE_RESULT EQUAL 0)
-                    message(FATAL_ERROR "Failed to download ROOT 6.20.08")
-                endif()
-            endif()
-
-            execute_process(
-                COMMAND
-                    "${CMAKE_COMMAND}"
-                    -S "${ROOT_SOURCE_DIR}"
-                    -B "${ROOT_BINARY_DIR}"
-                    "-DCMAKE_INSTALL_PREFIX=${ROOT_INSTALL_DIR}"
-                    "-DCMAKE_BUILD_TYPE=Release"
-                    -Dminimal=ON
-                    -Dminuit2=ON
-                    -Dpyroot=OFF
-                    -Dpyroot_experimental=OFF
-                    "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
-                RESULT_VARIABLE ROOT_CONFIGURE_RESULT
-                OUTPUT_VARIABLE ROOT_CONFIGURE_OUTPUT
-                ERROR_VARIABLE ROOT_CONFIGURE_ERROR
-            )
-
-            if(NOT ROOT_CONFIGURE_RESULT EQUAL 0)
-                message(FATAL_ERROR
-                    "Failed to configure ROOT 6.20.08\n"
-                    "${ROOT_CONFIGURE_OUTPUT}\n"
-                    "${ROOT_CONFIGURE_ERROR}"
-                )
-            endif()
-
-            execute_process(
-                COMMAND
-                    "${CMAKE_COMMAND}"
-                    --build "${ROOT_BINARY_DIR}"
-                    --target install
-                    --parallel
-                RESULT_VARIABLE ROOT_BUILD_RESULT
-            )
-
-            if(NOT ROOT_BUILD_RESULT EQUAL 0)
-                message(FATAL_ERROR "Failed to build ROOT 6.20.08")
-            endif()
-
-            list(PREPEND CMAKE_PREFIX_PATH "${ROOT_INSTALL_DIR}")
-            unset(ROOT_DIR CACHE)
-
-            find_package(
-                ROOT 6.20
-                REQUIRED
-                COMPONENTS ${ROOT_COMPONENTS}
-            )
-        else()
-            message(STATUS "Using existing ROOT ${ROOT_VERSION}")
-        endif()
 
         add_subdirectory(${corryvreckan_SOURCE_DIR} ${corryvreckan_BINARY_DIR})
     endif()
