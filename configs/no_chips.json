@@ -1,0 +1,6 @@
+{
+    "global_source_config": {
+        "event_handle_state": "fast"
+    },
+    "sources": []
+}
